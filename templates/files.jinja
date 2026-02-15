@@ -1,17 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Files</title>
-    <style>
-        body { font-family: monospace; max-width: 600px; margin: 2rem auto; }
-        table { width: 100%; border-collapse: collapse; }
-        td { padding: 0.25rem 0.5rem; }
-        tr:hover { background: #f5f5f5; }
-        .size { text-align: right; color: #666; }
-    </style>
-</head>
-<body>
+{% extends "base.jinja" %}
+
+{% block title %}Files{% endblock %}
+
+{% block head %}
+<style>
+    body { font-family: monospace; max-width: 600px; margin: 2rem auto; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 0.25rem 0.5rem; }
+    tr:hover { background: #f5f5f5; }
+    .size { text-align: right; color: #666; }
+</style>
+{% endblock %}
+
+{% block content %}
     <h1>Files</h1>
     {% if files.is_empty() %}
         <p>No files found.</p>
@@ -25,5 +26,4 @@
             {% endfor %}
         </table>
     {% endif %}
-</body>
-</html>
+{% endblock %}

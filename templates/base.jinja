@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{{ title }} - Cogere{% endblock %}</title>
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <main>
+        <ul>
+            {% for message in messages %}
+                <li>
+                    <span><strong>{{ message }}</strong></span>
+                </li>
+            {% endfor %}
+        </ul>
+        {% block content %}<p>Placeholder content</p>{% endblock %}
+    </main>
+  </body>
+</html>

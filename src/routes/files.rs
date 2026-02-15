@@ -1,5 +1,6 @@
 use askama::Template;
 use axum::{extract::State, http::StatusCode, response::Html};
+use axum_messages::{Message, Messages};
 use std::fs;
 
 use crate::{Config, server::AppState};
@@ -14,14 +15,21 @@ struct FileEntry {
 #[template(path = "files.jinja")]
 struct FilesTemplate {
     files: Vec<FileEntry>,
+    messages: Vec<Message>,
 }
 
 pub async fn files_index(
     State(state): State<AppState>,
+    messages: Messages,
 ) -> Result<Html<String>, (StatusCode, String)> {
     let files = read_files(&state.config).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
-    let html = FilesTemplate { files }.render().map_err(|e| {
+    let html = FilesTemplate {
+        files,
+        messages: messages.into_iter().collect(),
+    }
+    .render()
+    .map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Template error: {e}"),

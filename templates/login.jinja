@@ -1,17 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-</head>
-<body>
-    <ul>
-      {% for message in messages %}
-      <li>
-        <span><strong>{{ message }}</strong></span>
-      </li>
-      {% endfor %}
-    </ul>
+{% extends "base.jinja" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
     <form method="post" action="/login">
         <label for="username">Username</label>
         <input type="text" id="username" name="username" required autofocus>
@@ -25,5 +16,4 @@
             <input type="hidden" name="next" value="{{next}}" />
         {% endif %}
     </form>
-</body>
-</html>
+{% endblock %}
