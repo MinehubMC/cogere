@@ -1,36 +1,36 @@
 use askama::Template;
 use axum::{extract::State, http::StatusCode, response::Html};
 
-use crate::{AppState, database::apikeys::get_all_apikeys};
+use crate::{database::machine_keys::get_all_machinekeys, server::AppState};
 
 #[derive(Debug)]
-struct APIKeyEntry {
+struct MachineKeyEntry {
     id: String,
     description: String,
-    role: String,
+    group_id: String,
 }
 
 #[derive(Template)]
-#[template(path = "apikeys.jinja")]
-struct APIKeysTemplate {
-    keys: Vec<APIKeyEntry>,
+#[template(path = "machine_keys.jinja")]
+struct MachineKeysTemplate {
+    keys: Vec<MachineKeyEntry>,
 }
 
-pub async fn apikeys_index(
+pub async fn machinekeys_index(
     State(state): State<AppState>,
 ) -> Result<Html<String>, (StatusCode, String)> {
-    let keys = get_all_apikeys(&state.db)
+    let keys = get_all_machinekeys(&state.db)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {e}")))?
         .into_iter()
-        .map(|k| APIKeyEntry {
+        .map(|k| MachineKeyEntry {
             id: k.id.to_string(),
             description: k.description,
-            role: k.role.to_string(),
+            group_id: k.group_id.to_string(),
         })
         .collect();
 
-    let html = APIKeysTemplate { keys }.render().map_err(|e| {
+    let html = MachineKeysTemplate { keys }.render().map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Template error: {e}"),

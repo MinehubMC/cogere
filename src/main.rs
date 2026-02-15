@@ -1,21 +1,13 @@
+mod auth;
 mod database;
+mod errors;
 mod models;
 mod routes;
+mod server;
 
-use crate::routes::{apikeys, files};
-
-use axum::{Router, error_handling::HandleErrorLayer, http::StatusCode, routing::get};
-use sqlx::SqlitePool;
-use std::{net::SocketAddr, path::PathBuf, sync::Arc, time::Duration};
-use tower::{BoxError, ServiceBuilder};
-use tower_http::trace::TraceLayer;
+use crate::server::Server;
+use std::{net::SocketAddr, path::PathBuf};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-#[derive(Debug, Clone)]
-pub struct AppState {
-    pub db: SqlitePool,
-    pub config: Arc<Config>,
-}
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -42,7 +34,7 @@ impl Config {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
@@ -57,65 +49,5 @@ async fn main() {
         std::process::exit(1);
     });
 
-    let db_dir = config.data_folder.join(".cogere");
-    if let Err(e) = std::fs::create_dir_all(&db_dir) {
-        eprintln!(
-            "Error: failed to create directory {}: {}",
-            db_dir.display(),
-            e
-        );
-        std::process::exit(1);
-    }
-
-    let db_path = db_dir.join("db.sqlite3");
-    let db_url = format!("sqlite:{}?mode=rwc", db_path.display());
-
-    let pool = match SqlitePool::connect(&db_url).await {
-        Ok(pool) => pool,
-        Err(e) => {
-            eprintln!(
-                "Error: failed to connect to database at {}: {}",
-                db_path.display(),
-                e
-            );
-            std::process::exit(1);
-        }
-    };
-
-    sqlx::migrate!().run(&pool).await.unwrap_or_else(|e| {
-        eprintln!("Migration error: {e}");
-        std::process::exit(1);
-    });
-
-    let state = AppState {
-        db: pool,
-        config: Arc::new(config.clone()),
-    };
-
-    let app = Router::new()
-        .route("/", get(files::files_index))
-        .route("/apikeys", get(apikeys::apikeys_index))
-        .layer(
-            ServiceBuilder::new()
-                .layer(HandleErrorLayer::new(|error: BoxError| async move {
-                    if error.is::<tower::timeout::error::Elapsed>() {
-                        Ok(StatusCode::REQUEST_TIMEOUT)
-                    } else {
-                        Err((
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            format!("Unhandled internal error: {error}"),
-                        ))
-                    }
-                }))
-                .timeout(Duration::from_secs(10))
-                .layer(TraceLayer::new_for_http())
-                .into_inner(),
-        )
-        .with_state(state);
-
-    let listener = tokio::net::TcpListener::bind(config.socket_addr)
-        .await
-        .unwrap();
-    tracing::debug!("listening on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app).await.unwrap();
+    Server::new(config).await?.serve().await
 }

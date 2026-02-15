@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <ul>
+      {% for message in messages %}
+      <li>
+        <span><strong>{{ message }}</strong></span>
+      </li>
+      {% endfor %}
+    </ul>
+    <form method="post" action="/login">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autofocus>
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+
+        <button type="submit">Sign in</button>
+
+        {% if let Some(next) = next %}
+            <input type="hidden" name="next" value="{{next}}" />
+        {% endif %}
+    </form>
+</body>
+</html>

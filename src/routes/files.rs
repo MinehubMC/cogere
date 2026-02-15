@@ -2,7 +2,7 @@ use askama::Template;
 use axum::{extract::State, http::StatusCode, response::Html};
 use std::fs;
 
-use crate::{AppState, Config};
+use crate::{Config, server::AppState};
 
 #[derive(Debug)]
 struct FileEntry {
