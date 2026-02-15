@@ -15,3 +15,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.0", features = ["serde", "v7"] }
 sqlx = { version = "0.8.6", features = [ "sqlite", "runtime-tokio", "tls-native-tls", "uuid" ] }
+axum-login = "0.18.0"
