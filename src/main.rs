@@ -1,6 +1,8 @@
+mod database;
+mod models;
 mod routes;
 
-use crate::routes::files;
+use crate::routes::{apikeys, files};
 
 use axum::{Router, error_handling::HandleErrorLayer, http::StatusCode, routing::get};
 use sqlx::SqlitePool;
@@ -19,7 +21,6 @@ pub struct AppState {
 pub struct Config {
     pub data_folder: PathBuf,
     pub socket_addr: SocketAddr,
-    pub run_migrations: bool,
 }
 
 impl Config {
@@ -33,15 +34,9 @@ impl Config {
             .parse::<SocketAddr>()
             .map_err(|e| format!("COGERE_SOCKET_ADDR is not a valid socket address: {e}"))?;
 
-        let run_migrations = std::env::var("COGERE_RUN_MIGRATIONS")
-            .unwrap_or_else(|_| "false".to_string())
-            .parse::<bool>()
-            .map_err(|e| format!("COGERE_RUN_MIGRATIONS must be 'true' or 'false': {e}"))?;
-
         Ok(Self {
             data_folder,
             socket_addr,
-            run_migrations,
         })
     }
 }
@@ -87,12 +82,10 @@ async fn main() {
         }
     };
 
-    if config.run_migrations {
-        sqlx::migrate!().run(&pool).await.unwrap_or_else(|e| {
-            eprintln!("Migration error: {e}");
-            std::process::exit(1);
-        });
-    }
+    sqlx::migrate!().run(&pool).await.unwrap_or_else(|e| {
+        eprintln!("Migration error: {e}");
+        std::process::exit(1);
+    });
 
     let state = AppState {
         db: pool,
@@ -101,6 +94,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(files::files_index))
+        .route("/apikeys", get(apikeys::apikeys_index))
         .layer(
             ServiceBuilder::new()
                 .layer(HandleErrorLayer::new(|error: BoxError| async move {
