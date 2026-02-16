@@ -1,12 +1,18 @@
-use crate::routes::{
-    auth::{login_page, login_post},
-    files,
-    machine_keys::machinekeys_index,
+use crate::{
+    Config,
+    auth::auth::Backend,
+    routes::{
+        auth::{login_page, login_post},
+        files,
+        machine_keys::machinekeys_index,
+        plugins::plugin_upload,
+    },
+    storage::filesystem::FilesystemStorage,
 };
-use crate::{Config, auth::Backend};
 use axum::{
     Router,
     error_handling::HandleErrorLayer,
+    extract::DefaultBodyLimit,
     http::StatusCode,
     routing::{get, post},
 };
@@ -22,7 +28,7 @@ use std::sync::Arc;
 use time::Duration;
 use tokio::{net::TcpListener, signal, task::AbortHandle};
 use tower::{BoxError, ServiceBuilder};
-use tower_http::trace::TraceLayer;
+use tower_http::{limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tower_sessions::Expiry;
 use tower_sessions::cookie::Key;
 use tower_sessions_sqlx_store::SqliteStore;
@@ -31,6 +37,7 @@ use tower_sessions_sqlx_store::SqliteStore;
 pub struct AppState {
     pub db: SqlitePool,
     pub config: Arc<Config>,
+    pub storage: FilesystemStorage,
 }
 
 pub struct Server {
@@ -99,6 +106,7 @@ impl Server {
         let state = AppState {
             db: self.db,
             config: Arc::new(self.config.clone()),
+            storage: FilesystemStorage::new(self.config.data_folder),
         };
 
         let admin_routes = Router::new()
@@ -109,8 +117,8 @@ impl Server {
         let app = Router::new()
             .merge(admin_routes)
             .route("/", get(files::files_index))
-            .route("/login", get(login_page))
-            .route("/login", post(login_post))
+            .route("/plugins/upload", post(plugin_upload))
+            .route("/login", get(login_page).post(login_post))
             .layer(MessagesManagerLayer)
             .layer(auth_layer)
             .layer(
@@ -129,6 +137,10 @@ impl Server {
                     .layer(TraceLayer::new_for_http())
                     .into_inner(),
             )
+            .layer(DefaultBodyLimit::disable())
+            .layer(RequestBodyLimitLayer::new(
+                250 * 1024 * 1024, // 250Mb
+            ))
             .with_state(state);
 
         let listener = TcpListener::bind(self.config.socket_addr).await.unwrap();

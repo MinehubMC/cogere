@@ -114,10 +114,17 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for MachineKey {
             source: Box::new(e),
         })?;
 
+        let group_id_str: String = row.try_get("group_id")?;
+        let group_id =
+            uuid::Uuid::parse_str(&group_id_str).map_err(|e| sqlx::Error::ColumnDecode {
+                index: "group_id".to_string(),
+                source: Box::new(e),
+            })?;
+
         Ok(MachineKey {
             id,
+            group_id,
             description: row.try_get("description")?,
-            group_id: row.try_get("group_id")?,
             key_hash: row.try_get("key_hash")?,
         })
     }

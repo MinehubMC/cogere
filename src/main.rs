@@ -4,6 +4,7 @@ mod errors;
 mod models;
 mod routes;
 mod server;
+mod storage;
 
 use crate::server::Server;
 use std::{net::SocketAddr, path::PathBuf};

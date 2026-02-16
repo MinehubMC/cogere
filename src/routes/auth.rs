@@ -1,4 +1,4 @@
-use crate::{auth::AuthSession, models::auth::UserCredentials};
+use crate::{auth::auth::AuthSession, models::auth::UserCredentials};
 use askama::Template;
 use axum::{
     Form,

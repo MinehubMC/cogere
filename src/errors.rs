@@ -7,4 +7,7 @@ pub enum Error {
 
     #[error(transparent)]
     TaskJoin(#[from] task::JoinError),
+
+    #[error(transparent)]
+    Storage(#[from] crate::storage::StorageError),
 }
