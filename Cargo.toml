@@ -16,7 +16,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.0", features = ["serde", "v7"] }
 sqlx = { version = "0.8.6", features = [ "sqlite", "runtime-tokio", "tls-native-tls", "uuid" ] }
 axum-login = { git = "https://github.com/maxcountryman/axum-login.git", version = "0.18.0", default-features = false, features = ["require-builder"] }
-tower-sessions = { version = "0.14.0", default-features = false, features = ["signed"] }
+tower-sessions = { version = "0.15.0", default-features = false, features = ["signed"] }
 thiserror = "2.0.18"
 password-auth = "1.0.0"
 time = "0.3.47"
