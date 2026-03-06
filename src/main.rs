@@ -1,3 +1,4 @@
+mod assembler;
 mod auth;
 mod database;
 mod errors;
