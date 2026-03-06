@@ -117,7 +117,7 @@ impl Server {
         let app = Router::new()
             .merge(admin_routes)
             .route("/", get(files::files_index))
-            .route("/plugins/upload", post(plugin_upload))
+            .route("/plugins/upload/{group_id}", post(plugin_upload))
             .route("/login", get(login_page).post(login_post))
             .layer(MessagesManagerLayer)
             .layer(auth_layer)

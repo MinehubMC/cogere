@@ -1,7 +1,6 @@
 use axum::{
     Json,
-    extract::{Multipart, State},
-    http::StatusCode,
+    extract::{Multipart, Path, State},
 };
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
@@ -10,9 +9,10 @@ use uuid::Uuid;
 use crate::{
     auth::{
         extractor::AuthenticatedEntity,
-        permissions::{HasPermissions, Permission},
+        permissions::{Action, PermissionCheck, ResourceType, check::PermissionChecker},
     },
     database,
+    errors::{AppError, Error},
     server::AppState,
     storage::LocalStorage,
 };
@@ -35,83 +35,69 @@ pub struct PluginUploadResponse {
 pub async fn plugin_upload(
     State(state): State<AppState>,
     entity: AuthenticatedEntity,
+    Path(group_id): Path<Uuid>,
     mut multipart: Multipart,
-) -> Result<Json<PluginUploadResponse>, StatusCode> {
+) -> Result<Json<PluginUploadResponse>, AppError> {
+    PermissionChecker::new(&state.db, &entity)
+        .require(PermissionCheck::on_type(ResourceType::Plugin, Action::Create).in_group(group_id))
+        .await?;
+
     tracing::debug!(
         "Plugin upload started for entity: {:?}",
         entity.identifier()
     );
 
-    if !entity.has_permission(Permission::UploadPlugin) {
-        tracing::warn!("Permission denied for entity: {}", entity.identifier());
-        return Err(StatusCode::FORBIDDEN);
-    }
-
     let mut plugin_file: Option<Vec<u8>> = None;
     let mut metadata: Option<PluginMetadata> = None;
 
-    while let Some(field) = multipart.next_field().await.map_err(|e| {
-        tracing::error!("Failed to get next multipart field: {:?}", e);
-        StatusCode::BAD_REQUEST
-    })? {
-        let name = field.name().ok_or_else(|| {
-            tracing::error!("Multipart field has no name");
-            StatusCode::BAD_REQUEST
-        })?;
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| Error::BadRequest(e.to_string()))?
+    {
+        let name = field
+            .name()
+            .ok_or_else(|| Error::BadRequest("multipart field has no name".into()))?
+            .to_owned();
 
         tracing::debug!("Processing multipart field: {}", name);
 
-        match name {
+        match name.as_str() {
             "file" => {
-                let data = field.bytes().await.map_err(|e| {
-                    tracing::error!("Failed to read file bytes: {:?}", e);
-                    StatusCode::BAD_REQUEST
-                })?;
+                let data = field
+                    .bytes()
+                    .await
+                    .map_err(|e| Error::BadRequest(e.to_string()))?;
                 tracing::debug!("Received file with {} bytes", data.len());
                 plugin_file = Some(data.to_vec());
             }
             "metadata" => {
-                let data = field.text().await.map_err(|e| {
-                    tracing::error!("Failed to read metadata text: {:?}", e);
-                    StatusCode::BAD_REQUEST
-                })?;
+                let data = field
+                    .text()
+                    .await
+                    .map_err(|e| Error::BadRequest(e.to_string()))?;
                 tracing::debug!("Received metadata: {}", data);
-                metadata = Some(serde_json::from_str(&data).map_err(|e| {
-                    tracing::error!("Failed to parse metadata JSON: {:?}", e);
-                    StatusCode::BAD_REQUEST
-                })?);
+                metadata = Some(
+                    serde_json::from_str(&data).map_err(|e| Error::BadRequest(e.to_string()))?,
+                );
             }
-            _ => {
-                tracing::debug!("Ignoring unknown field: {}", name);
+            other => {
+                tracing::debug!("Ignoring unknown field: {}", other);
             }
         }
     }
 
-    let plugin_file = plugin_file.ok_or_else(|| {
-        tracing::error!("No file provided in upload");
-        StatusCode::BAD_REQUEST
-    })?;
-    let metadata = metadata.ok_or_else(|| {
-        tracing::error!("No metadata provided in upload");
-        StatusCode::BAD_REQUEST
-    })?;
+    let plugin_file = plugin_file.ok_or_else(|| Error::BadRequest("no file provided".into()))?;
+    let metadata = metadata.ok_or_else(|| Error::BadRequest("no metadata provided".into()))?;
 
     if plugin_file.is_empty() {
-        tracing::error!("Uploaded file is empty");
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(Error::BadRequest("uploaded file is empty".into()).into());
     }
 
     let id = Uuid::now_v7();
     tracing::debug!("Generated plugin ID: {}", id);
 
-    state
-        .storage
-        .put(id, Bytes::from(plugin_file))
-        .await
-        .map_err(|e| {
-            tracing::error!("Storage error: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    state.storage.put(id, Bytes::from(plugin_file)).await?;
 
     database::plugins::create_plugin(
         &state.db,
@@ -120,11 +106,7 @@ pub async fn plugin_upload(
         &metadata.group_id,
         &metadata.version,
     )
-    .await
-    .map_err(|e| {
-        tracing::error!("Database error: {:?}", e);
-        StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    .await?;
 
     tracing::info!(
         "Plugin uploaded successfully: {} {}:{}",

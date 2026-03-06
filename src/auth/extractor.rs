@@ -1,5 +1,5 @@
 use crate::{
-    auth::{auth::AuthSession, permissions::HasPermissions},
+    auth::auth::AuthSession,
     database::machine_keys::get_machinekey_by_id,
     models::auth::{MachineKey, User},
     server::AppState,
@@ -19,18 +19,11 @@ pub enum AuthenticatedEntity {
     Machine(MachineKey),
 }
 
-impl HasPermissions for AuthenticatedEntity {
-    fn has_permission(&self, permission: crate::auth::permissions::Permission) -> bool {
+impl AuthenticatedEntity {
+    pub fn identifier(&self) -> String {
         match self {
-            Self::User(user) => user.has_permission(permission),
-            Self::Machine(machine) => machine.has_permission(permission),
-        }
-    }
-
-    fn identifier(&self) -> String {
-        match self {
-            Self::User(user) => user.identifier(),
-            Self::Machine(machine) => machine.identifier(),
+            Self::User(u) => format!("user:{}", u.id),
+            Self::Machine(m) => format!("machine:{}", m.id),
         }
     }
 }

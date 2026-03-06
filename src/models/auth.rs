@@ -2,33 +2,7 @@ use axum_login::AuthUser;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum Role {
-    Guest = 0,
-    User = 1,
-    Admin = 2,
-}
-
-impl Role {
-    pub fn from_i64(v: i64) -> Option<Self> {
-        match v {
-            0 => Some(Self::Guest),
-            1 => Some(Self::User),
-            2 => Some(Self::Admin),
-            _ => None,
-        }
-    }
-}
-
-impl std::fmt::Display for Role {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Role::Guest => write!(f, "guest"),
-            Role::User => write!(f, "user"),
-            Role::Admin => write!(f, "admin"),
-        }
-    }
-}
+use crate::auth::permissions::InstanceRole;
 
 #[derive(Clone, Deserialize)]
 pub struct UserCredentials {
@@ -43,7 +17,7 @@ pub struct User {
     pub username: String,
     pub email: String,
     pub password_hash: String,
-    pub role: Role,
+    pub role: InstanceRole,
 }
 
 impl std::fmt::Debug for User {
@@ -68,18 +42,12 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for User {
             source: Box::new(e),
         })?;
 
-        let role_int: i64 = row.try_get("role")?;
-        let role = Role::from_i64(role_int).ok_or_else(|| sqlx::Error::ColumnDecode {
-            index: "role".to_string(),
-            source: "invalid role value".into(),
-        })?;
-
         Ok(User {
             id,
             username: row.try_get("username")?,
             email: row.try_get("email")?,
             password_hash: row.try_get("password_hash")?,
-            role,
+            role: row.try_get("role")?,
         })
     }
 }
