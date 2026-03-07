@@ -2,10 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>{% block title %}{{ title }} - Cogere{% endblock %}</title>
+    <title>{% block title %}{{ title }} - {{ settings.instance_name }}{% endblock %}</title>
+    <script src="/assets/htmx-2.0.8.min.js"></script>
     {% block head %}{% endblock %}
   </head>
   <body>
+    <header>
+        <nav>
+            <div class="nav-left">
+                <a href="/">{{ settings.instance_name }}</a>
+            </div>
+            <div class="nav-right">
+                {% if let Some(user) = current_user %}
+                    <span>{{ user.username }}</span>
+                    <a href="/logout">Logout</a>
+                {% else %}
+                    <a href="/login">Sign in</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
     <main>
         <ul>
             {% for message in messages %}

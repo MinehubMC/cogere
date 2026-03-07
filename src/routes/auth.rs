@@ -1,8 +1,12 @@
-use crate::{auth::auth::AuthSession, models::auth::UserCredentials};
+use crate::{
+    auth::auth::AuthSession,
+    models::auth::{CurrentUser, UserCredentials},
+    server::AppState,
+};
 use askama::Template;
 use axum::{
     Form,
-    extract::Query,
+    extract::{Query, State},
     http::StatusCode,
     response::{Html, IntoResponse, Redirect},
 };
@@ -12,6 +16,8 @@ use serde::Deserialize;
 #[derive(Template)]
 #[template(path = "login.jinja")]
 struct LoginTemplate {
+    settings: crate::models::settings::InstanceSettings,
+    current_user: Option<CurrentUser>,
     messages: Vec<Message>,
     next: Option<String>,
 }
@@ -22,11 +28,16 @@ pub struct NextUrl {
 }
 
 pub async fn login_page(
+    State(state): State<AppState>,
     messages: Messages,
     Query(NextUrl { next }): Query<NextUrl>,
 ) -> impl IntoResponse {
+    let settings = state.settings.read().await.clone();
+
     Html(
         LoginTemplate {
+            settings,
+            current_user: None,
             messages: messages.into_iter().collect(),
             next,
         }

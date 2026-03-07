@@ -52,6 +52,26 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for User {
     }
 }
 
+// exposed to askama handlers
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CurrentUser {
+    pub id: Uuid,
+    pub username: String,
+    pub email: String,
+    pub role: InstanceRole,
+}
+
+impl From<User> for CurrentUser {
+    fn from(u: User) -> Self {
+        Self {
+            id: u.id,
+            username: u.username,
+            email: u.email,
+            role: u.role,
+        }
+    }
+}
+
 impl AuthUser for User {
     type Id = Uuid;
 

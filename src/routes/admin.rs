@@ -1,5 +1,7 @@
 use crate::{
-    errors::AppError,
+    auth::auth::AuthSession,
+    errors::{AppError, Error},
+    models::auth::CurrentUser,
     server::{AppState, reload_settings},
 };
 use askama::Template;
@@ -10,17 +12,20 @@ use axum_messages::{Message, Messages};
 #[template(path = "admin/settings.jinja")]
 struct SettingsTemplate {
     settings: crate::models::settings::InstanceSettings,
+    current_user: Option<CurrentUser>,
     messages: Vec<Message>,
 }
 
 pub async fn settings_index(
     State(state): State<AppState>,
+    auth: AuthSession,
     messages: Messages,
 ) -> Result<impl IntoResponse, AppError> {
     let settings = state.settings.read().await.clone();
 
     let html = SettingsTemplate {
         settings,
+        current_user: Some(auth.user().await.ok_or(Error::Unauthorized)?.into()),
         messages: messages.into_iter().collect(),
     }
     .render()?;

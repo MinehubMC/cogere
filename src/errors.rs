@@ -20,6 +20,8 @@ pub enum Error {
     BadRequest(String),
     #[error(transparent)]
     Template(#[from] askama::Error),
+    #[error("unauthorized")]
+    Unauthorized,
 }
 
 pub struct AppError(Error);
@@ -53,6 +55,7 @@ impl IntoResponse for AppError {
         let status = match &self.0 {
             Error::Forbidden => StatusCode::FORBIDDEN,
             Error::BadRequest(_) => StatusCode::BAD_REQUEST,
+            Error::Unauthorized => StatusCode::UNAUTHORIZED,
             Error::Sqlx(e) => {
                 tracing::error!("database error: {:?}", e);
                 StatusCode::INTERNAL_SERVER_ERROR

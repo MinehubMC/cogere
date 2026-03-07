@@ -1,8 +1,14 @@
 use askama::Template;
-use axum::{extract::State, http::StatusCode, response::Html};
+use axum::{extract::State, response::Html};
 use axum_messages::{Message, Messages};
 
-use crate::{database::machine_keys::get_all_machinekeys, server::AppState};
+use crate::{
+    auth::auth::AuthSession,
+    database::machine_keys::get_all_machinekeys,
+    errors::{AppError, Error},
+    models::auth::CurrentUser,
+    server::AppState,
+};
 
 #[derive(Debug)]
 struct MachineKeyEntry {
@@ -16,15 +22,20 @@ struct MachineKeyEntry {
 struct MachineKeysTemplate {
     keys: Vec<MachineKeyEntry>,
     messages: Vec<Message>,
+    settings: crate::models::settings::InstanceSettings,
+    current_user: Option<CurrentUser>,
 }
 
 pub async fn machinekeys_index(
     State(state): State<AppState>,
+    auth: AuthSession,
     messages: Messages,
-) -> Result<Html<String>, (StatusCode, String)> {
+) -> Result<Html<String>, AppError> {
+    let settings = state.settings.read().await.clone();
+    let user = auth.user().await.ok_or(Error::Unauthorized)?;
+
     let keys = get_all_machinekeys(&state.db)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DB error: {e}")))?
+        .await?
         .into_iter()
         .map(|k| MachineKeyEntry {
             id: k.id.to_string(),
@@ -36,14 +47,10 @@ pub async fn machinekeys_index(
     let html = MachineKeysTemplate {
         keys,
         messages: messages.into_iter().collect(),
+        settings,
+        current_user: Some(user.into()),
     }
-    .render()
-    .map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Template error: {e}"),
-        )
-    })?;
+    .render()?;
 
     Ok(Html(html))
 }

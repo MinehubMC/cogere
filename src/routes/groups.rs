@@ -5,11 +5,13 @@ use uuid::Uuid;
 
 use crate::{
     auth::{
+        auth::AuthSession,
         extractor::AuthenticatedEntity,
         permissions::{Action, PermissionCheck, ResourceType, check::PermissionChecker},
     },
     database::groups::get_memberships_by_user_id,
-    errors::AppError,
+    errors::{AppError, Error},
+    models::auth::{CurrentUser, User},
     server::AppState,
 };
 
@@ -24,13 +26,19 @@ struct GroupEntry {
 struct GroupsTemplate {
     groups: Vec<GroupEntry>,
     messages: Vec<Message>,
+    settings: crate::models::settings::InstanceSettings,
+    current_user: Option<CurrentUser>,
 }
 
 pub async fn groups_index(
     State(state): State<AppState>,
-    entity: AuthenticatedEntity,
+    auth: AuthSession,
     messages: Messages,
 ) -> Result<Html<String>, AppError> {
+    let settings = state.settings.read().await.clone();
+    let user: User = auth.user().await.ok_or(Error::Unauthorized)?;
+    let entity = AuthenticatedEntity::User(user.clone());
+
     PermissionChecker::new(&state.db, &entity)
         .require(PermissionCheck::on_type(ResourceType::Group, Action::List))
         .await?;
@@ -46,7 +54,9 @@ pub async fn groups_index(
 
     let html = GroupsTemplate {
         groups,
+        settings,
         messages: messages.into_iter().collect(),
+        current_user: Some(user.into()),
     }
     .render()?;
 

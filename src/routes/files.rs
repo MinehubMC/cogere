@@ -3,7 +3,7 @@ use axum::{extract::State, http::StatusCode, response::Html};
 use axum_messages::{Message, Messages};
 use std::fs;
 
-use crate::{Config, server::AppState};
+use crate::{Config, auth::auth::AuthSession, models::auth::CurrentUser, server::AppState};
 
 #[derive(Debug)]
 struct FileEntry {
@@ -16,17 +16,23 @@ struct FileEntry {
 struct FilesTemplate {
     files: Vec<FileEntry>,
     messages: Vec<Message>,
+    settings: crate::models::settings::InstanceSettings,
+    current_user: Option<CurrentUser>,
 }
 
 pub async fn files_index(
     State(state): State<AppState>,
+    auth: AuthSession,
     messages: Messages,
 ) -> Result<Html<String>, (StatusCode, String)> {
+    let settings = state.settings.read().await.clone();
     let files = read_files(&state.config).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
     let html = FilesTemplate {
         files,
         messages: messages.into_iter().collect(),
+        settings,
+        current_user: auth.user().await.map(|u| u.into()),
     }
     .render()
     .map_err(|e| {
