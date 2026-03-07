@@ -1,6 +1,7 @@
 use uuid::Uuid;
 
 pub mod auth;
+pub mod settings;
 
 #[derive(Debug)]
 pub struct Group {

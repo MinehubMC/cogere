@@ -1,3 +1,4 @@
+pub mod admin;
 pub mod assembler;
 pub mod auth;
 pub mod files;

@@ -1,7 +1,12 @@
 use crate::{
     Config,
+    auth::admin::require_admin,
     auth::auth::Backend,
+    database::settings::load_instance_settings,
+    errors::Error,
+    models::settings::InstanceSettings,
     routes::{
+        admin,
         auth::{login_page, login_post},
         files, groups,
         machine_keys::machinekeys_index,
@@ -14,6 +19,7 @@ use axum::{
     error_handling::HandleErrorLayer,
     extract::DefaultBodyLimit,
     http::StatusCode,
+    middleware,
     routing::{get, post},
 };
 use axum_login::tower_sessions::ExpiredDeletion;
@@ -26,7 +32,7 @@ use axum_messages::MessagesManagerLayer;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use time::Duration;
-use tokio::{net::TcpListener, signal, task::AbortHandle};
+use tokio::{net::TcpListener, signal, sync::RwLock, task::AbortHandle};
 use tower::{BoxError, ServiceBuilder};
 use tower_http::{limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tower_sessions::Expiry;
@@ -38,6 +44,7 @@ pub struct AppState {
     pub db: SqlitePool,
     pub config: Arc<Config>,
     pub storage: FilesystemStorage,
+    pub settings: Arc<RwLock<InstanceSettings>>,
 }
 
 pub struct Server {
@@ -103,16 +110,25 @@ impl Server {
             .unauthenticated(RedirectHandler::new().login_url("/login"))
             .build();
 
+        let settings = load_instance_settings(&self.db).await?;
+
         let state = AppState {
             db: self.db,
             config: Arc::new(self.config.clone()),
             storage: FilesystemStorage::new(self.config.data_folder),
+            settings: Arc::new(RwLock::new(settings)),
         };
+
+        let admin_routes = Router::new()
+            .route("/admin/settings", get(admin::settings_index))
+            .route("/admin/settings/reload", post(admin::settings_reload))
+            .route_layer(middleware::from_fn(require_admin));
 
         let authenticated_routes = Router::new()
             .route("/machine-keys", get(machinekeys_index))
             .route("/groups", get(groups::groups_index))
             // .route("/users", get(users_index))
+            .merge(admin_routes)
             .route_layer(require_login);
 
         let app = Router::new()
@@ -179,4 +195,10 @@ async fn shutdown_signal(deletion_task_abort_handle: AbortHandle) {
         _ = ctrl_c => { deletion_task_abort_handle.abort() },
         _ = terminate => { deletion_task_abort_handle.abort() },
     }
+}
+
+pub async fn reload_settings(state: &AppState) -> Result<(), Error> {
+    let fresh = load_instance_settings(&state.db).await?;
+    *state.settings.write().await = fresh;
+    Ok(())
 }
