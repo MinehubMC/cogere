@@ -1,5 +1,6 @@
 pub mod admin;
 pub mod assembler;
+pub mod assets;
 pub mod auth;
 pub mod files;
 pub mod groups;

@@ -1,12 +1,11 @@
 use crate::{
     Config,
-    auth::admin::require_admin,
-    auth::auth::Backend,
+    auth::{admin::require_admin, auth::Backend},
     database::settings::load_instance_settings,
     errors::Error,
     models::settings::InstanceSettings,
     routes::{
-        admin,
+        admin, assets,
         auth::{login_page, login_post},
         files, groups,
         machine_keys::machinekeys_index,
@@ -134,6 +133,7 @@ impl Server {
         let app = Router::new()
             .merge(authenticated_routes)
             .route("/", get(files::files_index))
+            .route("/assets/{*path}", get(assets::serve_asset))
             .route("/plugins/upload/{group_id}", post(plugin_upload))
             .route("/login", get(login_page).post(login_post))
             .layer(MessagesManagerLayer)
