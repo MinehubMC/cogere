@@ -3,7 +3,7 @@ use crate::{
     auth::auth::Backend,
     routes::{
         auth::{login_page, login_post},
-        files,
+        files, groups,
         machine_keys::machinekeys_index,
         plugins::plugin_upload,
     },
@@ -109,13 +109,14 @@ impl Server {
             storage: FilesystemStorage::new(self.config.data_folder),
         };
 
-        let admin_routes = Router::new()
+        let authenticated_routes = Router::new()
             .route("/machine-keys", get(machinekeys_index))
+            .route("/groups", get(groups::groups_index))
             // .route("/users", get(users_index))
             .route_layer(require_login);
 
         let app = Router::new()
-            .merge(admin_routes)
+            .merge(authenticated_routes)
             .route("/", get(files::files_index))
             .route("/plugins/upload/{group_id}", post(plugin_upload))
             .route("/login", get(login_page).post(login_post))

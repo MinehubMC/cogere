@@ -10,17 +10,16 @@ use crate::storage::StorageError;
 pub enum Error {
     #[error(transparent)]
     Sqlx(#[from] sqlx::Error),
-
     #[error(transparent)]
     TaskJoin(#[from] task::JoinError),
-
     #[error(transparent)]
     Storage(#[from] crate::storage::StorageError),
-
     #[error("forbidden")]
     Forbidden,
     #[error("bad request: {0}")]
     BadRequest(String),
+    #[error(transparent)]
+    Template(#[from] askama::Error),
 }
 
 pub struct AppError(Error);
@@ -43,6 +42,12 @@ impl From<StorageError> for AppError {
     }
 }
 
+impl From<askama::Error> for AppError {
+    fn from(e: askama::Error) -> Self {
+        AppError(Error::Template(e))
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let status = match &self.0 {
@@ -58,6 +63,10 @@ impl IntoResponse for AppError {
             }
             Error::Storage(e) => {
                 tracing::error!("storage error: {:?}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+            Error::Template(e) => {
+                tracing::error!("template error: {:?}", e);
                 StatusCode::INTERNAL_SERVER_ERROR
             }
         };

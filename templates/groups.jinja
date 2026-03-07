@@ -1,0 +1,24 @@
+{% extends "base.jinja" %}
+
+{% block title %}Select a group to continue{% endblock %}
+
+{% block head %}
+<style>
+    body { font-family: monospace; max-width: 600px; margin: 2rem auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h1>Select a group to continue</h1>
+    {% if groups.is_empty() %}
+        <p>Get started by creating a group.</p>
+    {% else %}
+        <div>
+            {% for group in groups %}
+            <div>
+                <a href="/g/{{ group.id }}">{{ group.name }}</a>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

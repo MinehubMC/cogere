@@ -1,4 +1,4 @@
-use crate::auth::permissions::GroupRole;
+use crate::{auth::permissions::GroupRole, models::Group};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -21,4 +21,14 @@ pub async fn get_membership_by_user_and_group_id(
     .await?;
 
     Ok(row.map(|r| r.group_role))
+}
+
+pub async fn get_memberships_by_user_id(
+    pool: &SqlitePool,
+    user_id: Uuid,
+) -> Result<Vec<Group>, sqlx::Error> {
+    sqlx::query_as::<_, Group>("SELECT g.* FROM groups g LEFT JOIN group_members gm ON g.id = gm.group_id WHERE gm.user_id = ?")
+        .bind(user_id.to_string())
+        .fetch_all(pool)
+        .await
 }

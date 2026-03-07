@@ -26,6 +26,13 @@ impl AuthenticatedEntity {
             Self::Machine(m) => format!("machine:{}", m.id),
         }
     }
+
+    pub fn raw_uuid(&self) -> Uuid {
+        match self {
+            Self::User(u) => u.id,
+            Self::Machine(u) => u.id,
+        }
+    }
 }
 
 impl FromRequestParts<AppState> for AuthenticatedEntity {
