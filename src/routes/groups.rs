@@ -32,10 +32,7 @@ pub async fn groups_index(
     messages: Messages,
 ) -> Result<Html<String>, AppError> {
     PermissionChecker::new(&state.db, &entity)
-        .require(PermissionCheck::on_type(
-            ResourceType::Plugin,
-            Action::Create,
-        ))
+        .require(PermissionCheck::on_type(ResourceType::Group, Action::List))
         .await?;
 
     let groups = get_memberships_by_user_id(&state.db, entity.raw_uuid())

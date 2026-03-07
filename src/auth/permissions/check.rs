@@ -43,6 +43,13 @@ impl<'a> PermissionChecker<'a> {
     }
 
     async fn check_user(&self, user_id: Uuid, check: &PermissionCheck) -> Result<bool, Error> {
+        if check.group_id.is_none() {
+            return Ok(matches!(
+                (&check.resource_type, &check.action),
+                (ResourceType::Group, Action::List) | (ResourceType::Group, Action::Create)
+            ));
+        }
+
         let group_id = match check.group_id {
             Some(id) => id,
             None => return Ok(false),
