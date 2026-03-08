@@ -1,35 +1,59 @@
 {% extends "base.jinja" %}
 
-{% block title %}Select a group to continue{% endblock %}
+{% block title %}Your groups{% endblock %}
 
 {% block content %}
-    <h1>Select a group to continue</h1>
-    {% if groups.is_empty() %}
-        <p>Get started by creating a group.</p>
-        <form>
-            <div class="field">
-                <label class="label" for="name">Name:</label>
-                <div class="control">
-                    <input class="input" type="text" id="name" name="name" placeholder="My Group">
+<h1 class="title is-3">Your groups</h1>
+{% if groups.is_empty() %}
+    <p class="subtitle is-5">You don't have any groups yet.</p>
+{% else %}
+    <p class="subtitle is-5">Select a group to continue.</p>
+{% endif %}
+
+<div class="columns">
+    <div class="column is-three-quarters">
+        <div class="fixed-grid has-4-cols">
+            <div class="grid">
+                {% for group in groups %}
+                <div class="cell">
+                    <a href="/g/{{ group.id }}">{{ group.name }}</a>
                 </div>
+                {% endfor %}
             </div>
-            <div class="field">
-                <label class="label" for="description">Description:</label>
-                <div class="control">
-                    <input class="input" type="text" id="description" name="description">
-                </div>
-            </div>
-            <div class="control">
-                <button class="button is-primary" type="submit">Create</button>
-            </div>
-        </form>
-    {% else %}
-        <div>
-            {% for group in groups %}
-            <div>
-                <a href="/g/{{ group.id }}">{{ group.name }}</a>
-            </div>
-            {% endfor %}
         </div>
-    {% endif %}
+    </div>
+
+    <div class="column is-one-quarter">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">Create a group</p>
+            </header>
+
+            <div class="card-content">
+                <form id="create-group-form">
+                    <div class="field">
+                        <label class="label" for="name">Name</label>
+                        <div class="control">
+                            <input class="input" type="text" id="name" name="name" placeholder="My Group">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label" for="description">Description</label>
+                        <div class="control">
+                            <input class="input" type="text" id="description" name="description" placeholder="What's the group about?">
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <footer class="card-footer">
+                <button class="card-footer-item button is-primary" form="create-group-form">
+                    Create
+                </button>
+            </footer>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
