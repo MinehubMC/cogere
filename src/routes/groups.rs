@@ -7,7 +7,9 @@ use crate::{
     auth::{
         auth::AuthSession,
         extractor::AuthenticatedEntity,
-        permissions::{Action, PermissionCheck, ResourceType, check::PermissionChecker},
+        permissions::{
+            Action, InstanceRole, PermissionCheck, ResourceType, check::PermissionChecker,
+        },
     },
     database::groups::get_memberships_by_user_id,
     errors::{AppError, Error},

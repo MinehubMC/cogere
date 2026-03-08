@@ -1,5 +1,6 @@
 use crate::{
     auth::auth::AuthSession,
+    auth::permissions::InstanceRole,
     models::auth::{CurrentUser, UserCredentials},
     server::AppState,
 };

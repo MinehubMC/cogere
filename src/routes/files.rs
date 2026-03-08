@@ -3,7 +3,10 @@ use axum::{extract::State, http::StatusCode, response::Html};
 use axum_messages::{Message, Messages};
 use std::fs;
 
-use crate::{Config, auth::auth::AuthSession, models::auth::CurrentUser, server::AppState};
+use crate::{
+    Config, auth::auth::AuthSession, auth::permissions::InstanceRole, models::auth::CurrentUser,
+    server::AppState,
+};
 
 #[derive(Debug)]
 struct FileEntry {

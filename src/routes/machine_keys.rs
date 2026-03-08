@@ -4,6 +4,7 @@ use axum_messages::{Message, Messages};
 
 use crate::{
     auth::auth::AuthSession,
+    auth::permissions::InstanceRole,
     database::machine_keys::get_all_machinekeys,
     errors::{AppError, Error},
     models::auth::CurrentUser,

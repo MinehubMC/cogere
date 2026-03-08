@@ -1,0 +1,12 @@
+.cogere-navbar {
+    .navbar-brand {
+        align-items: center;
+        padding-left: 18px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .cogere-navbar {
+        padding: 16px 0;
+    }
+}

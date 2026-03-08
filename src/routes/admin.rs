@@ -1,5 +1,6 @@
 use crate::{
     auth::auth::AuthSession,
+    auth::permissions::InstanceRole,
     errors::{AppError, Error},
     models::auth::CurrentUser,
     server::{AppState, reload_settings},

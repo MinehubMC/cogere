@@ -1,36 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}{{ title }}{% endblock %} - {{ settings.instance_name }}</title>
-    <script src="/assets/htmx-2.0.8.min.js"></script>
-    {% block head %}{% endblock %}
-  </head>
-  <body>
-    <header>
-        <nav>
-            <div class="nav-left">
-                <a href="/">{{ settings.instance_name }}</a>
-            </div>
-            <div class="nav-right">
-                {% if let Some(user) = current_user %}
-                    <span>{{ user.username }}</span>
-                    <a href="/logout">Logout</a>
-                {% else %}
-                    <a href="/login">Sign in</a>
-                {% endif %}
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="/assets/htmx-2.0.8.min.js"></script>
+        <link rel="stylesheet" href="/assets/bulma-1.0.4.min.css">
+        <link rel="stylesheet" href="/assets/custom.css">
+        <title>{% block title %}{{ title }}{% endblock %} - {{ settings.instance_name }}</title>
+        {% block head %}{% endblock %}
+    </head>
+    <body>
+        <nav class="navbar cogere-navbar" role="navigation" aria-label="main navigation">
+            <div class="container">
+                <div class="navbar-brand">
+                <a class="navbar-item has-text-weight-bold is-size-5" href="/">
+                    {{ settings.instance_name }}
+                </a>
+
+                <a role="button"
+                    class="navbar-burger"
+                    aria-label="menu"
+                    aria-expanded="false"
+                    data-target="mainNavbar"
+                    hx-on:click="
+                        const menu = document.getElementById('mainNavbar');
+                        const burger = event.currentTarget;
+                        menu.classList.toggle('is-active');
+                        burger.classList.toggle('is-active');
+                        burger.setAttribute('aria-expanded', menu.classList.contains('is-active'));
+                    ">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+                </div>
+
+                <div class="navbar-menu" id="mainNavbar">
+                <div class="navbar-start">
+                    <a class="navbar-item" href="/">Home</a>
+                    {% if let Some(user) = current_user %}
+                        <a class="navbar-item" href="/groups">Groups</a>
+                        {% match user.role %}
+                            {% when InstanceRole::InstanceAdmin %}
+                                <a class="navbar-item" href="/admin/settings">Instance settings</a>
+                            {% when _ %}
+                        {% endmatch %}
+                    {% endif %}
+                </div>
+
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                    {% if let Some(user) = current_user %}
+                        <div class="buttons">
+                        <span class="button is-static">{{ user.username }}</span>
+                        <a class="button" href="/logout">Logout</a>
+                        </div>
+                    {% else %}
+                        <div class="buttons">
+                        <a class="button is-primary" href="/login">Sign in</a>
+                        </div>
+                    {% endif %}
+                    </div>
+                </div>
+                </div>
             </div>
         </nav>
-    </header>
-    <main>
-        <ul>
+        <main>
+            <div class="container mt-4">
             {% for message in messages %}
-                <li>
-                    <span><strong>{{ message }}</strong></span>
-                </li>
+                <div class="notification is-info">
+                <button class="delete" onclick="this.parentElement.remove()"></button>
+                {{ message }}
+                </div>
             {% endfor %}
-        </ul>
-        {% block content %}<p>Placeholder content</p>{% endblock %}
-    </main>
-  </body>
+            </div>
+
+            <div class="container mt-5">
+                <div class="box">
+                {% block content %}<p class="has-text-grey">Placeholder content</p>{% endblock %}
+                </div>
+            </div>
+        </main>
+    </body>
 </html>
