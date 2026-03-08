@@ -4,13 +4,31 @@
 
 {% block content %}
     <form method="post" action="/login">
-        <label for="username">Username</label>
-        <input type="text" id="username" name="username" required autofocus>
+        <div class="field">
+            <label class="label" for="username">Username</label>
+            <div class="control has-icons-left">
+                <input class="input" type="text" id="username" name="username" required autofocus placeholder="Enter your username">
+                <span class="icon is-small is-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+            </div>
+        </div>
 
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required>
+        <div class="field">
+            <label class="label" for="password">Password</label>
+            <div class="control has-icons-left">
+                <input class="input" type="password" id="password" name="password" required placeholder="Enter your password">
+                <span class="icon is-small is-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </span>
+            </div>
+        </div>
 
-        <button type="submit">Sign in</button>
+        <div class="field mt-5">
+            <div class="control">
+                <button class="button is-primary is-fullwidth" type="submit">Sign in</button>
+            </div>
+        </div>
 
         {% if let Some(next) = next %}
             <input type="hidden" name="next" value="{{next}}" />
