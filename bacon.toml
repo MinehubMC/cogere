@@ -87,6 +87,9 @@ need_stdout = true
 allow_warnings = true
 background = true
 env.COGERE_DATA_FOLDER="data"
+watch = [
+    "templates/"
+]
 
 # Run your long-running application (eg server) and have the result displayed in bacon.
 # For programs that never stop (eg a server), `background` is set to false
