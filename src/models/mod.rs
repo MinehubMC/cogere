@@ -7,6 +7,7 @@ pub mod settings;
 pub struct Group {
     pub id: Uuid,
     pub name: String,
+    pub description: String,
 }
 
 impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for Group {
@@ -22,6 +23,7 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for Group {
         Ok(Group {
             id,
             name: row.try_get("name")?,
+            description: row.try_get("description")?,
         })
     }
 }

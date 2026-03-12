@@ -13,11 +13,9 @@
 <div class="columns">
     <div class="column is-three-quarters">
         <div class="fixed-grid has-4-cols">
-            <div class="grid">
+            <div class="grid" id="group-grid">
                 {% for group in groups %}
-                <div class="cell">
-                    <a href="/g/{{ group.id }}">{{ group.name }}</a>
-                </div>
+                    {% include "partials/group_card.jinja" %}
                 {% endfor %}
             </div>
         </div>
@@ -30,7 +28,7 @@
             </header>
 
             <div class="card-content">
-                <form id="create-group-form">
+                <form id="create-group-form" hx-post="/groups" hx-target="#group-grid" hx-swap="beforeend">
                     <div class="field">
                         <label class="label" for="name">Name</label>
                         <div class="control">

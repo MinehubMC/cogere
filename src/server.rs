@@ -125,7 +125,10 @@ impl Server {
 
         let authenticated_routes = Router::new()
             .route("/machine-keys", get(machinekeys_index))
-            .route("/groups", get(groups::groups_index))
+            .route(
+                "/groups",
+                get(groups::groups_index).post(groups::create_group),
+            )
             // .route("/users", get(users_index))
             .merge(admin_routes)
             .route_layer(require_login);

@@ -1,6 +1,7 @@
 use askama::Template;
-use axum::{extract::State, response::Html};
+use axum::{Form, extract::State, response::Html};
 use axum_messages::{Message, Messages};
+use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
@@ -11,9 +12,12 @@ use crate::{
             Action, InstanceRole, PermissionCheck, ResourceType, check::PermissionChecker,
         },
     },
-    database::groups::get_memberships_by_user_id,
+    database::{self, groups::get_memberships_by_user_id},
     errors::{AppError, Error},
-    models::auth::{CurrentUser, User},
+    models::{
+        self,
+        auth::{CurrentUser, User},
+    },
     server::AppState,
 };
 
@@ -21,6 +25,17 @@ use crate::{
 struct GroupEntry {
     id: Uuid,
     name: String,
+    description: String,
+}
+
+impl From<models::Group> for GroupEntry {
+    fn from(value: models::Group) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            description: value.description,
+        }
+    }
 }
 
 #[derive(Template)]
@@ -48,10 +63,7 @@ pub async fn groups_index(
     let groups = get_memberships_by_user_id(&state.db, entity.raw_uuid())
         .await?
         .into_iter()
-        .map(|r| GroupEntry {
-            id: r.id,
-            name: r.name,
-        })
+        .map(GroupEntry::from)
         .collect();
 
     let html = GroupsTemplate {
@@ -59,6 +71,44 @@ pub async fn groups_index(
         settings,
         messages: messages.into_iter().collect(),
         current_user: Some(user.into()),
+    }
+    .render()?;
+
+    Ok(Html(html))
+}
+
+#[derive(Deserialize)]
+pub struct CreateGroupForm {
+    pub name: String,
+    pub description: String,
+}
+
+#[derive(Template)]
+#[template(path = "partials/group_card.jinja")]
+struct GroupCardTemplate {
+    group: GroupEntry,
+}
+
+pub async fn create_group(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    Form(form): Form<CreateGroupForm>,
+) -> Result<Html<String>, AppError> {
+    let user: User = auth.user().await.ok_or(Error::Unauthorized)?;
+    let entity = AuthenticatedEntity::User(user.clone());
+
+    PermissionChecker::new(&state.db, &entity)
+        .require(PermissionCheck::on_type(
+            ResourceType::Group,
+            Action::Create,
+        ))
+        .await?;
+
+    let group =
+        database::groups::create_group(&state.db, form.name, form.description, user.id).await?;
+
+    let html = GroupCardTemplate {
+        group: group.into(),
     }
     .render()?;
 
