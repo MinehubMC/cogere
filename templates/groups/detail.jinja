@@ -1,11 +1,12 @@
 {% extends "base.jinja" %}
-
 {% block title %}{{ group.name }}{% endblock %}
-
 {% block content %}
 <h1 class="title is-3">{{ group.name }}</h1>
 <p class="subtitle is-5">{{ group.description }}</p>
 
-content here
+{% include "groups/partials/tabs.jinja" %}
 
+<div id="tab-content">
+  {% block tab_content %}{% endblock %}
+</div>
 {% endblock %}

@@ -7,7 +7,7 @@ use crate::{
     auth::permissions::InstanceRole,
     database::machine_keys::get_all_machinekeys,
     errors::{AppError, Error},
-    models::auth::CurrentUser,
+    models::auth::PublicUser,
     server::AppState,
 };
 
@@ -24,7 +24,7 @@ struct MachineKeysTemplate {
     keys: Vec<MachineKeyEntry>,
     messages: Vec<Message>,
     settings: crate::models::settings::InstanceSettings,
-    current_user: Option<CurrentUser>,
+    current_user: Option<PublicUser>,
 }
 
 pub async fn machinekeys_index(

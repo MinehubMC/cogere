@@ -2,7 +2,7 @@ use crate::{
     auth::auth::AuthSession,
     auth::permissions::InstanceRole,
     errors::{AppError, Error},
-    models::auth::CurrentUser,
+    models::auth::PublicUser,
     server::{AppState, reload_settings},
 };
 use askama::Template;
@@ -13,7 +13,7 @@ use axum_messages::{Message, Messages};
 #[template(path = "admin/settings.jinja")]
 struct SettingsTemplate {
     settings: crate::models::settings::InstanceSettings,
-    current_user: Option<CurrentUser>,
+    current_user: Option<PublicUser>,
     messages: Vec<Message>,
 }
 

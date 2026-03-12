@@ -130,6 +130,7 @@ impl Server {
                 get(groups::groups_index).post(groups::create_group),
             )
             .route("/g/{group_id}", get(groups::groups_detail))
+            .route("/g/{group_id}/members", get(groups::groups_members))
             // .route("/users", get(users_index))
             .merge(admin_routes)
             .route_layer(require_login);

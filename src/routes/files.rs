@@ -4,7 +4,7 @@ use axum_messages::{Message, Messages};
 use std::fs;
 
 use crate::{
-    Config, auth::auth::AuthSession, auth::permissions::InstanceRole, models::auth::CurrentUser,
+    Config, auth::auth::AuthSession, auth::permissions::InstanceRole, models::auth::PublicUser,
     server::AppState,
 };
 
@@ -20,7 +20,7 @@ struct FilesTemplate {
     files: Vec<FileEntry>,
     messages: Vec<Message>,
     settings: crate::models::settings::InstanceSettings,
-    current_user: Option<CurrentUser>,
+    current_user: Option<PublicUser>,
 }
 
 pub async fn files_index(

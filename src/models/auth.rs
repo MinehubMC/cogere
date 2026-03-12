@@ -54,14 +54,14 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for User {
 
 // exposed to askama handlers
 #[derive(Clone, Serialize, Deserialize)]
-pub struct CurrentUser {
+pub struct PublicUser {
     pub id: Uuid,
     pub username: String,
     pub email: String,
     pub role: InstanceRole,
 }
 
-impl From<User> for CurrentUser {
+impl From<User> for PublicUser {
     fn from(u: User) -> Self {
         Self {
             id: u.id,

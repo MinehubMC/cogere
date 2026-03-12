@@ -1,7 +1,7 @@
 use crate::{
     auth::auth::AuthSession,
     auth::permissions::InstanceRole,
-    models::auth::{CurrentUser, UserCredentials},
+    models::auth::{PublicUser, UserCredentials},
     server::AppState,
 };
 use askama::Template;
@@ -18,7 +18,7 @@ use serde::Deserialize;
 #[template(path = "login.jinja")]
 struct LoginTemplate {
     settings: crate::models::settings::InstanceSettings,
-    current_user: Option<CurrentUser>,
+    current_user: Option<PublicUser>,
     messages: Vec<Message>,
     next: Option<String>,
 }

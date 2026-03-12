@@ -1,0 +1,8 @@
+{% if is_htmx %}
+<div hx-swap-oob="outerHTML:#group-tabs">
+  {% include "groups/partials/tabs.jinja" %}
+</div>
+{% endif %}
+
+<p>{{ group.description }}</p>
+<p>members here</p>
