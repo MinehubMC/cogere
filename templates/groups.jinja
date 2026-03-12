@@ -21,6 +21,7 @@
         </div>
     </div>
 
+    {% if settings.allow_user_group_creation %}
     <div class="column is-one-quarter">
         <div class="card">
             <header class="card-header">
@@ -28,7 +29,7 @@
             </header>
 
             <div class="card-content">
-                <form id="create-group-form" hx-post="/groups" hx-target="#group-grid" hx-swap="beforeend">
+                <form id="create-group-form" hx-post="/groups" hx-target="#group-grid" hx-swap="beforeend" hx-on::after-request="if(event.detail.successful) this.reset()">
                     <div class="field">
                         <label class="label" for="name">Name</label>
                         <div class="control">
@@ -52,6 +53,7 @@
             </footer>
         </div>
     </div>
+    {% endif %}
 </div>
 
 {% endblock %}

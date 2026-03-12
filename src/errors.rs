@@ -22,6 +22,8 @@ pub enum Error {
     Template(#[from] askama::Error),
     #[error("unauthorized")]
     Unauthorized,
+    #[error("not allowed: {0}")]
+    NotAllowed(String),
 }
 
 pub struct AppError(Error);
@@ -71,6 +73,9 @@ impl IntoResponse for AppError {
             Error::Template(e) => {
                 tracing::error!("template error: {:?}", e);
                 StatusCode::INTERNAL_SERVER_ERROR
+            }
+            Error::NotAllowed(msg) => {
+                return (StatusCode::FORBIDDEN, msg.clone()).into_response();
             }
         };
         status.into_response()

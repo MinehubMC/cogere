@@ -94,8 +94,15 @@ pub async fn create_group(
     auth: AuthSession,
     Form(form): Form<CreateGroupForm>,
 ) -> Result<Html<String>, AppError> {
+    let settings = state.settings.read().await.clone();
     let user: User = auth.user().await.ok_or(Error::Unauthorized)?;
     let entity = AuthenticatedEntity::User(user.clone());
+
+    if !settings.allow_user_group_creation && user.role != InstanceRole::InstanceAdmin {
+        return Err(
+            Error::NotAllowed("group creation is disabled on this instance".to_string()).into(),
+        );
+    }
 
     PermissionChecker::new(&state.db, &entity)
         .require(PermissionCheck::on_type(
