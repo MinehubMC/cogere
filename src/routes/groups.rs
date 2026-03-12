@@ -39,7 +39,7 @@ impl From<models::Group> for GroupEntry {
 }
 
 #[derive(Template)]
-#[template(path = "groups.jinja")]
+#[template(path = "groups/index.jinja")]
 struct GroupsTemplate {
     groups: Vec<GroupEntry>,
     messages: Vec<Message>,
@@ -84,7 +84,7 @@ pub struct CreateGroupForm {
 }
 
 #[derive(Template)]
-#[template(path = "partials/group_card.jinja")]
+#[template(path = "groups/partials/group_card.jinja")]
 struct GroupCardTemplate {
     group: GroupEntry,
 }
