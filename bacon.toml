@@ -87,6 +87,7 @@ need_stdout = true
 allow_warnings = true
 background = true
 env.COGERE_DATA_FOLDER="data"
+env.COGERE_COOKIE_KEY="FdMad/ZnVR4ZSl1dAgUiXIUiWRlaILtKCoGrFbhBfW1bMQbd5aLx68oXMZP5VRSz7r/AdWg0w8c6BmYibLKBbg=="
 watch = [
     "templates/"
 ]

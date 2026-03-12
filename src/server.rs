@@ -35,7 +35,6 @@ use tokio::{net::TcpListener, signal, sync::RwLock, task::AbortHandle};
 use tower::{BoxError, ServiceBuilder};
 use tower_http::{limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tower_sessions::Expiry;
-use tower_sessions::cookie::Key;
 use tower_sessions_sqlx_store::SqliteStore;
 
 #[derive(Debug, Clone)]
@@ -96,7 +95,7 @@ impl Server {
                 .continuously_delete_expired(tokio::time::Duration::from_secs(60)),
         );
 
-        let key = Key::generate();
+        let key = self.config.cookie_key.clone();
         let session_layer = SessionManagerLayer::new(session_store)
             .with_secure(false)
             .with_expiry(Expiry::OnInactivity(Duration::days(1)))

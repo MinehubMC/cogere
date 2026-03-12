@@ -1,5 +1,11 @@
 # cogere - cache, assembler and repository for minecraft plugins
 
+## How to generate a cookie key?
+
+```bash
+openssl rand -base64 64
+```
+
 TODO:
 - [ ] Authentication
   - [ ] API keys with a description (used by developers, admins and machines)

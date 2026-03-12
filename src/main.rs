@@ -9,12 +9,14 @@ mod storage;
 
 use crate::server::Server;
 use std::{net::SocketAddr, path::PathBuf};
+use tower_sessions::cookie::Key;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Config {
     pub data_folder: PathBuf,
     pub socket_addr: SocketAddr,
+    pub cookie_key: Key,
 }
 
 impl Config {
@@ -28,10 +30,37 @@ impl Config {
             .parse::<SocketAddr>()
             .map_err(|e| format!("COGERE_SOCKET_ADDR is not a valid socket address: {e}"))?;
 
+        let cookie_key = match std::env::var("COGERE_COOKIE_KEY") {
+            Ok(k) if k.len() >= 64 => Key::from(k.as_bytes()),
+            Ok(_) => {
+                eprintln!(
+                    "Warning: COGERE_COOKIE_KEY must be at least 64 bytes, generating a temporary key - sessions will not persist across restarts"
+                );
+                Key::generate()
+            }
+            Err(_) => {
+                eprintln!(
+                    "Warning: COGERE_COOKIE_KEY not set, generating a temporary key - sessions will not persist across restarts"
+                );
+                Key::generate()
+            }
+        };
+
         Ok(Self {
             data_folder,
             socket_addr,
+            cookie_key,
         })
+    }
+}
+
+impl std::fmt::Debug for Config {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Config")
+            .field("data_folder", &self.data_folder)
+            .field("socket_addr", &self.socket_addr)
+            .field("cookie_key", &"[redacted]")
+            .finish()
     }
 }
 
