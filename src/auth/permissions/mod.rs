@@ -61,7 +61,7 @@ impl ResourceType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     Create,
-    Download,
+    Get,
     List,
     Delete,
     Manage,
@@ -71,7 +71,7 @@ impl Action {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Create => "create",
-            Self::Download => "download",
+            Self::Get => "get",
             Self::List => "list",
             Self::Delete => "delete",
             Self::Manage => "manage",

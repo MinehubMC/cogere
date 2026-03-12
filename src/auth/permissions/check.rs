@@ -108,7 +108,7 @@ impl<'a> PermissionChecker<'a> {
         action: &Action,
     ) -> bool {
         match action {
-            Action::List | Action::Download => true,
+            Action::List | Action::Get => true,
             Action::Create => *role >= GroupRole::Editor,
             Action::Delete => *role >= GroupRole::Admin,
             Action::Manage => match resource {

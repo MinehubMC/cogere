@@ -62,3 +62,15 @@ pub async fn create_group(
 
     Ok(group)
 }
+
+pub async fn get_group_by_id_and_user_id(
+    pool: &SqlitePool,
+    group_id: Uuid,
+    user_id: Uuid,
+) -> Result<Group, sqlx::Error> {
+    sqlx::query_as::<_, Group>("SELECT g.* FROM groups g LEFT JOIN group_members gm ON g.id = gm.group_id WHERE g.id = ? AND gm.user_id = ?")
+        .bind(group_id.to_string())
+        .bind(user_id.to_string())
+        .fetch_one(pool)
+        .await
+}

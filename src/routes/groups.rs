@@ -1,5 +1,9 @@
 use askama::Template;
-use axum::{Form, extract::State, response::Html};
+use axum::{
+    Form,
+    extract::{Path, State},
+    response::Html,
+};
 use axum_messages::{Message, Messages};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -12,7 +16,10 @@ use crate::{
             Action, InstanceRole, PermissionCheck, ResourceType, check::PermissionChecker,
         },
     },
-    database::{self, groups::get_memberships_by_user_id},
+    database::{
+        self,
+        groups::{get_group_by_id_and_user_id, get_memberships_by_user_id},
+    },
     errors::{AppError, Error},
     models::{
         self,
@@ -116,6 +123,44 @@ pub async fn create_group(
 
     let html = GroupCardTemplate {
         group: group.into(),
+    }
+    .render()?;
+
+    Ok(Html(html))
+}
+
+#[derive(Template)]
+#[template(path = "groups/detail.jinja")]
+struct GroupDetailTemplate {
+    group: GroupEntry,
+    messages: Vec<Message>,
+    settings: crate::models::settings::InstanceSettings,
+    current_user: Option<CurrentUser>,
+}
+
+pub async fn groups_detail(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    messages: Messages,
+    Path(group_id): Path<Uuid>,
+) -> Result<Html<String>, AppError> {
+    let settings = state.settings.read().await.clone();
+    let user: User = auth.user().await.ok_or(Error::Unauthorized)?;
+    let entity = AuthenticatedEntity::User(user.clone());
+
+    PermissionChecker::new(&state.db, &entity)
+        .require(PermissionCheck::on_type(ResourceType::Group, Action::Get))
+        .await?;
+
+    let group = get_group_by_id_and_user_id(&state.db, group_id, entity.raw_uuid())
+        .await?
+        .into();
+
+    let html = GroupDetailTemplate {
+        group,
+        settings,
+        messages: messages.into_iter().collect(),
+        current_user: Some(user.into()),
     }
     .render()?;
 
