@@ -1,6 +1,6 @@
 use crate::{
     auth::permissions::GroupRole,
-    models::{Group, auth::User},
+    models::{auth::User, groups::Group},
 };
 use sqlx::SqlitePool;
 use uuid::Uuid;

@@ -25,6 +25,7 @@ use crate::{
     models::{
         self,
         auth::{PublicUser, User},
+        plugins::Plugin,
         settings::InstanceSettings,
     },
     server::AppState,
@@ -37,8 +38,8 @@ struct GroupEntry {
     description: String,
 }
 
-impl From<models::Group> for GroupEntry {
-    fn from(value: models::Group) -> Self {
+impl From<models::groups::Group> for GroupEntry {
+    fn from(value: models::groups::Group) -> Self {
         Self {
             id: value.id,
             name: value.name,
@@ -248,6 +249,61 @@ pub async fn groups_members(
             messages: messages.into_iter().collect(),
             current_user: Some(user.into()),
             active_tab: "members",
+            is_htmx: false,
+        }
+        .render()?
+    };
+
+    Ok(Html(html))
+}
+
+#[derive(Template)]
+#[template(path = "groups/plugins.jinja")]
+struct GroupPluginsTemplate {
+    group: GroupEntry,
+    // plugins: Vec<Plugin>,
+    settings: InstanceSettings,
+    messages: Vec<Message>,
+    current_user: Option<PublicUser>,
+    active_tab: &'static str,
+    is_htmx: bool,
+}
+
+#[derive(Template)]
+#[template(path = "groups/partials/plugins_content.jinja")]
+struct GroupPluginsPartialTemplate {
+    group: GroupEntry,
+    // plugins: Vec<Plugin>,
+    active_tab: &'static str,
+    is_htmx: bool,
+}
+
+pub async fn groups_plugins(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    messages: Messages,
+    headers: HeaderMap,
+    Path(group_id): Path<Uuid>,
+) -> Result<Html<String>, AppError> {
+    let (group, user) = load_group_context(&state, &auth, group_id).await?;
+    // let plugins = get_plugins_by_group_id(&state.db, group_id).await?;
+
+    let html = if headers.contains_key("hx-request") {
+        GroupPluginsPartialTemplate {
+            group,
+            // plugins,
+            active_tab: "plugins",
+            is_htmx: true,
+        }
+        .render()?
+    } else {
+        GroupPluginsTemplate {
+            group,
+            // plugins,
+            settings: state.settings.read().await.clone(),
+            messages: messages.into_iter().collect(),
+            current_user: Some(user.into()),
+            active_tab: "plugins",
             is_htmx: false,
         }
         .render()?

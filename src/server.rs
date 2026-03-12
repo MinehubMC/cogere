@@ -131,7 +131,7 @@ impl Server {
             )
             .route("/g/{group_id}", get(groups::groups_detail))
             .route("/g/{group_id}/members", get(groups::groups_members))
-            // .route("/users", get(users_index))
+            .route("/g/{group_id}/plugins", get(groups::groups_plugins))
             .merge(admin_routes)
             .route_layer(require_login);
 

@@ -1,16 +1,5 @@
 <div class="tabs">
   <ul id="group-tabs">
-    <li class="{% if active_tab == "overview" %}is-active{% endif %}">
-      <a href="/g/{{ group.id }}"
-         hx-get="/g/{{ group.id }}"
-         hx-target="#tab-content"
-         hx-push-url="true">Overview</a>
-    </li>
-    <li class="{% if active_tab == "members" %}is-active{% endif %}">
-      <a href="/g/{{ group.id }}/members"
-         hx-get="/g/{{ group.id }}/members"
-         hx-target="#tab-content"
-         hx-push-url="true">Members</a>
-    </li>
+    {% include "groups/partials/tabs_items.jinja" %}
   </ul>
 </div>

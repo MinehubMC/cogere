@@ -1,9 +1,8 @@
 {% if is_htmx %}
-<div hx-swap-oob="outerHTML:#group-tabs">
-  {% include "groups/partials/tabs.jinja" %}
-</div>
+<ul id="group-tabs" hx-swap-oob="outerHTML:#group-tabs">
+  {% include "groups/partials/tabs_items.jinja" %}
+</ul>
 {% endif %}
-
 
 <p>{{ group.description }}</p>
 <p>specific content here, maybe amount of plugins and quota and stuff like that, latest activity</p>
