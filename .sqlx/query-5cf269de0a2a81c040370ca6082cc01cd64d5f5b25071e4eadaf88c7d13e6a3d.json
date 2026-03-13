@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO blobs (id, sha256, size_bytes, ref_count)\n             VALUES (?, ?, ?, 1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "5cf269de0a2a81c040370ca6082cc01cd64d5f5b25071e4eadaf88c7d13e6a3d"
+}

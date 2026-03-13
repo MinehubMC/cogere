@@ -5,4 +5,36 @@
 {% endif %}
 
 <p>{{ group.description }}</p>
-<p>plugins</p>
+
+<div id="upload-result"></div>
+
+<form
+  hx-post="/api/v1/groups/{{ group.id }}/plugins"
+  hx-encoding="multipart/form-data"
+  hx-target="#upload-result"
+  hx-swap="innerHTML"
+  hx-on::after-request="if(event.detail.successful) this.reset()"
+>
+  <input type="text" name="artifact_id" placeholder="my-plugin" required />
+  <input type="text" name="group_id"    placeholder="com.example" required />
+  <input type="text" name="version"     placeholder="1.0.0" required />
+  <input type="file" name="file" required />
+
+  <input type="hidden" name="metadata" id="plugin-metadata" />
+
+  <button type="submit">Upload plugin</button>
+</form>
+
+<script>
+document.querySelector('form').addEventListener('htmx:configRequest', (e) => {
+  const fd = e.detail.parameters;
+  e.detail.parameters['metadata'] = JSON.stringify({
+    artifact_id: fd['artifact_id'],
+    group_id:    fd['group_id'],
+    version:     fd['version'],
+  });
+  delete e.detail.parameters['artifact_id'];
+  delete e.detail.parameters['group_id'];
+  delete e.detail.parameters['version'];
+});
+</script>

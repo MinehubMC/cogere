@@ -78,6 +78,16 @@ pub async fn get_group_by_id_and_user_id(
         .await
 }
 
+pub async fn get_group_by_id(
+    pool: &SqlitePool,
+    group_id: Uuid,
+) -> Result<Option<Group>, sqlx::Error> {
+    sqlx::query_as::<_, Group>("SELECT * FROM groups WHERE id = ?")
+        .bind(group_id.to_string())
+        .fetch_optional(pool)
+        .await
+}
+
 pub async fn get_group_members(
     pool: &SqlitePool,
     group_id: Uuid,

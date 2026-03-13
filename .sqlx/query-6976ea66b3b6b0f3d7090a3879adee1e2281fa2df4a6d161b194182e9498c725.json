@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO group_plugins (group_id, plugin_id, is_owner, visibility)\n         VALUES (?, ?, 1, 'private')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "6976ea66b3b6b0f3d7090a3879adee1e2281fa2df4a6d161b194182e9498c725"
+}

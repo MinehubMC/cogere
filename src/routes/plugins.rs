@@ -2,7 +2,6 @@ use axum::{
     Json,
     extract::{Multipart, Path, State},
 };
-use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -11,10 +10,9 @@ use crate::{
         extractor::AuthenticatedEntity,
         permissions::{Action, PermissionCheck, ResourceType, check::PermissionChecker},
     },
-    database,
     errors::{AppError, Error},
+    plugins::{self, UploadPluginOptions},
     server::AppState,
-    storage::LocalStorage,
 };
 
 #[derive(Debug, Deserialize)]
@@ -26,7 +24,8 @@ pub struct PluginMetadata {
 
 #[derive(Debug, Serialize)]
 pub struct PluginUploadResponse {
-    pub id: Uuid,
+    pub plugin_id: Uuid,
+    pub version_id: Uuid,
     pub artifact_id: String,
     pub group_id: String,
     pub version: String,
@@ -87,36 +86,25 @@ pub async fn plugin_upload(
         }
     }
 
-    let plugin_file = plugin_file.ok_or_else(|| Error::BadRequest("no file provided".into()))?;
+    let file = plugin_file.ok_or_else(|| Error::BadRequest("no file provided".into()))?;
     let metadata = metadata.ok_or_else(|| Error::BadRequest("no metadata provided".into()))?;
 
-    if plugin_file.is_empty() {
-        return Err(Error::BadRequest("uploaded file is empty".into()).into());
-    }
-
-    let id = Uuid::now_v7();
-    tracing::debug!("Generated plugin ID: {}", id);
-
-    state.storage.put(id, Bytes::from(plugin_file)).await?;
-
-    database::plugins::create_plugin(
-        &state.db,
-        id,
-        &metadata.artifact_id,
-        &metadata.group_id,
-        &metadata.version,
+    let result = plugins::upload_plugin(
+        &state,
+        &entity,
+        UploadPluginOptions {
+            group_id,
+            plugin_artifact_id: metadata.artifact_id.clone(),
+            plugin_group_id: metadata.group_id.clone(),
+            version: metadata.version.clone(),
+            file: file.into(),
+        },
     )
     .await?;
 
-    tracing::info!(
-        "Plugin uploaded successfully: {} {}:{}",
-        metadata.artifact_id,
-        metadata.group_id,
-        metadata.version
-    );
-
     Ok(Json(PluginUploadResponse {
-        id,
+        plugin_id: result.plugin_id,
+        version_id: result.version_id,
         artifact_id: metadata.artifact_id,
         group_id: metadata.group_id,
         version: metadata.version,

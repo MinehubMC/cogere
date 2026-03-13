@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{os::unix::fs::MetadataExt, path::PathBuf};
 
 use bytes::Bytes;
 use tokio::{
@@ -57,6 +57,12 @@ impl LocalStorage for FilesystemStorage {
         match fs::metadata(self.path_for(key)).await {
             Ok(_) => Ok(true),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+            Err(e) => Err(StorageError::Io(e)),
+        }
+    }
+    async fn size(&self, key: Uuid) -> Result<u64, StorageError> {
+        match fs::metadata(self.path_for(key)).await {
+            Ok(file) => Ok(file.size()),
             Err(e) => Err(StorageError::Io(e)),
         }
     }

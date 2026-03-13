@@ -24,6 +24,8 @@ pub enum Error {
     Unauthorized,
     #[error("not allowed: {0}")]
     NotAllowed(String),
+    #[error("not found: {0}")]
+    NotFound(String),
 }
 
 pub struct AppError(Error);
@@ -76,6 +78,9 @@ impl IntoResponse for AppError {
             }
             Error::NotAllowed(msg) => {
                 return (StatusCode::FORBIDDEN, msg.clone()).into_response();
+            }
+            Error::NotFound(msg) => {
+                return (StatusCode::NOT_FOUND, msg.clone()).into_response();
             }
         };
         status.into_response()

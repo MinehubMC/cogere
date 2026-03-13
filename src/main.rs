@@ -3,6 +3,7 @@ mod auth;
 mod database;
 mod errors;
 mod models;
+mod plugins;
 mod routes;
 mod server;
 mod storage;

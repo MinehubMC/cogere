@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO plugins (id, plugin_group_id, plugin_artifact_id, source)\n         VALUES (?, ?, ?, 'local')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "5676067f3104cdddccb47505817558c9e1a8421c7759dab2a333752d6bd64fb2"
+}

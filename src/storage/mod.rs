@@ -17,4 +17,5 @@ pub trait LocalStorage {
     async fn get(&self, key: Uuid) -> Result<Bytes, StorageError>;
     async fn delete(&self, key: Uuid) -> Result<(), StorageError>;
     async fn exists(&self, key: Uuid) -> Result<bool, StorageError>;
+    async fn size(&self, key: Uuid) -> Result<u64, StorageError>;
 }
