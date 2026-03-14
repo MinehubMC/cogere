@@ -25,7 +25,7 @@ use crate::{
     models::{
         self,
         auth::{PublicUser, User},
-        plugins::Plugin,
+        groups::GroupMember,
         settings::InstanceSettings,
     },
     server::AppState,
@@ -163,7 +163,7 @@ struct GroupOverviewTemplate {
 #[template(path = "groups/members.jinja")]
 struct GroupMembersTemplate {
     group: GroupEntry,
-    members: Vec<PublicUser>,
+    members: Vec<GroupMember>,
     settings: InstanceSettings,
     messages: Vec<Message>,
     current_user: Option<PublicUser>,
@@ -183,7 +183,7 @@ struct GroupOverviewPartialTemplate {
 #[template(path = "groups/partials/members_content.jinja")]
 struct GroupMembersPartialTemplate {
     group: GroupEntry,
-    members: Vec<PublicUser>,
+    members: Vec<GroupMember>,
     active_tab: &'static str,
     is_htmx: bool,
 }
@@ -227,11 +227,7 @@ pub async fn groups_members(
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
     let (group, user) = load_group_context(&state, &auth, group_id).await?;
-    let members = get_group_members(&state.db, group_id)
-        .await?
-        .into_iter()
-        .map(PublicUser::from)
-        .collect();
+    let members = get_group_members(&state.db, group_id).await?;
 
     let html = if headers.contains_key("hx-request") {
         GroupMembersPartialTemplate {

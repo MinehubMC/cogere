@@ -4,5 +4,15 @@
 </ul>
 {% endif %}
 
-<p>{{ group.description }}</p>
-<p>members here</p>
+<table class="table">
+    <thead>
+        <th>id</th>
+        <th>username</th>
+        <th>role</th>
+    </thead>
+    {% for user in members %}
+        <td>{{ user.id }}</td>
+        <td>{{ user.username }}</td>
+        <td>{{ user.role }}</td>
+    {% endfor %}
+</table>

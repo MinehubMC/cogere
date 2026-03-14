@@ -1,6 +1,9 @@
 use crate::{
     auth::permissions::GroupRole,
-    models::{auth::User, groups::Group},
+    models::{
+        auth::User,
+        groups::{Group, GroupMember},
+    },
 };
 use sqlx::SqlitePool;
 use uuid::Uuid;
@@ -91,8 +94,8 @@ pub async fn get_group_by_id(
 pub async fn get_group_members(
     pool: &SqlitePool,
     group_id: Uuid,
-) -> Result<Vec<User>, sqlx::Error> {
-    sqlx::query_as::<_, User>("SELECT u.* FROM group_members gm LEFT JOIN users u ON u.id = gm.user_id WHERE gm.group_id = ?")
+) -> Result<Vec<GroupMember>, sqlx::Error> {
+    sqlx::query_as::<_, GroupMember>("SELECT u.id, u.username, gm.group_role FROM group_members gm LEFT JOIN users u ON u.id = gm.user_id WHERE gm.group_id = ?")
         .bind(group_id.to_string())
         .fetch_all(pool)
         .await

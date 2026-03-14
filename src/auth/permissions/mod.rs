@@ -1,3 +1,6 @@
+use core::fmt;
+
+use askama::filters::HtmlSafe;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -18,6 +21,19 @@ pub enum GroupRole {
     Admin = 2,
     Owner = 3,
 }
+
+impl fmt::Display for GroupRole {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            GroupRole::Viewer => write!(f, "Viewer"),
+            GroupRole::Editor => write!(f, "Editor"),
+            GroupRole::Admin => write!(f, "Admin"),
+            GroupRole::Owner => write!(f, "Owner"),
+        }
+    }
+}
+
+impl HtmlSafe for GroupRole {}
 
 #[derive(Debug, thiserror::Error)]
 #[error("invalid group role: {0}")]
