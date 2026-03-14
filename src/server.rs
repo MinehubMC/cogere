@@ -163,6 +163,10 @@ impl Server {
                 get(assembler::get_assembly),
             )
             .route(
+                "/api/v1/groups/{group_id}/assemblies/{id}/download",
+                get(assembler::download_assembly),
+            )
+            .route(
                 "/api/v1/groups/{group_id}/plugins",
                 post(plugins::plugin_upload),
             )

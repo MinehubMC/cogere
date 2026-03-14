@@ -295,3 +295,60 @@ pub async fn get_assembly(
         artifacts,
     }))
 }
+
+pub async fn get_assembly_status(
+    pool: &SqlitePool,
+    assembly_id: Uuid,
+) -> Result<Option<AssemblyStatus>, sqlx::Error> {
+    let assembly_id_str = assembly_id.to_string();
+
+    let row = sqlx::query!(
+        "SELECT status, blob_id, expires_at, error FROM assemblies WHERE id = ?",
+        assembly_id_str
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    let Some(row) = row else {
+        return Ok(None);
+    };
+
+    let status = match row.status.as_str() {
+        "pending" => AssemblyStatus::Pending,
+        "running" => AssemblyStatus::Running,
+        "completed" => AssemblyStatus::Completed {
+            blob_id: row
+                .blob_id
+                .as_deref()
+                .and_then(|s| Uuid::parse_str(s).ok())
+                .ok_or_else(|| sqlx::Error::ColumnDecode {
+                    index: "blob_id".into(),
+                    source: "completed assembly missing blob_id".into(),
+                })?,
+            expires_at: row
+                .expires_at
+                .as_deref()
+                .map(|s| DateTime::parse_from_rfc3339(s).map(|dt| dt.with_timezone(&Utc)))
+                .transpose()
+                .map_err(|e| sqlx::Error::ColumnDecode {
+                    index: "expires_at".into(),
+                    source: Box::new(e),
+                })?
+                .ok_or_else(|| sqlx::Error::ColumnDecode {
+                    index: "expires_at".into(),
+                    source: "completed assembly missing expires_at".into(),
+                })?,
+        },
+        "failed" => AssemblyStatus::Failed {
+            error: AssemblyError::Internal(row.error.unwrap_or_else(|| "unknown error".into())),
+        },
+        s => {
+            return Err(sqlx::Error::ColumnDecode {
+                index: "status".into(),
+                source: format!("unknown status: {s}").into(),
+            });
+        }
+    };
+
+    Ok(Some(status))
+}
