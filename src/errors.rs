@@ -26,6 +26,8 @@ pub enum Error {
     NotAllowed(String),
     #[error("not found: {0}")]
     NotFound(String),
+    #[error("conflict: {0}")]
+    Conflict(String),
 }
 
 pub struct AppError(Error);
@@ -81,6 +83,9 @@ impl IntoResponse for AppError {
             }
             Error::NotFound(msg) => {
                 return (StatusCode::NOT_FOUND, msg.clone()).into_response();
+            }
+            Error::Conflict(msg) => {
+                return (StatusCode::CONFLICT, msg.clone()).into_response();
             }
         };
         status.into_response()

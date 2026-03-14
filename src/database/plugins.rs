@@ -1,6 +1,8 @@
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
+use crate::models::plugins::PluginVersion;
+
 pub struct CreateLocalPluginOptions {
     pub plugin_id: Uuid,
     pub version_id: Uuid,
@@ -85,4 +87,65 @@ pub async fn create_local_plugin(
 
     tx.commit().await?;
     Ok(())
+}
+
+pub async fn get_plugin_version(
+    pool: &SqlitePool,
+    group_id: Uuid,
+    plugin_group_id: String,
+    plugin_artifact_id: String,
+    version: String,
+) -> Result<Option<PluginVersion>, sqlx::Error> {
+    let group_id_str = group_id.to_string();
+
+    let row = sqlx::query!(
+        r#"
+        SELECT
+            pv.id AS "id!",
+            pv.plugin_id AS "plugin_id!",
+            pv.version AS "version!",
+            pv.blob_id AS blob_id
+        FROM plugin_versions pv
+        JOIN plugins p ON p.id  = pv.plugin_id
+        JOIN group_plugins gp ON gp.plugin_id = p.id
+        WHERE gp.group_id = ?
+          AND p.plugin_group_id = ?
+          AND p.plugin_artifact_id = ?
+          AND pv.version = ?
+        "#,
+        group_id_str,
+        plugin_group_id,
+        plugin_artifact_id,
+        version,
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    row.map(|r| {
+        let id = Uuid::parse_str(&r.id).map_err(|e| sqlx::Error::ColumnDecode {
+            index: "id".to_string(),
+            source: Box::new(e),
+        })?;
+        let plugin_id = Uuid::parse_str(&r.plugin_id).map_err(|e| sqlx::Error::ColumnDecode {
+            index: "plugin_id".to_string(),
+            source: Box::new(e),
+        })?;
+        let blob_id = r
+            .blob_id
+            .as_deref()
+            .map(Uuid::parse_str)
+            .transpose()
+            .map_err(|e| sqlx::Error::ColumnDecode {
+                index: "blob_id".to_string(),
+                source: Box::new(e),
+            })?;
+
+        Ok(PluginVersion {
+            id,
+            plugin_id,
+            version: r.version,
+            blob_id,
+        })
+    })
+    .transpose()
 }

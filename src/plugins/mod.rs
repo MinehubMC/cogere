@@ -37,7 +37,21 @@ pub async fn upload_plugin(
         )
         .await?;
 
-    // TODO ! CHECK THAT VERSION DOESN'T CONFLICT
+    let existing_version = database::plugins::get_plugin_version(
+        &state.db,
+        input.group_id,
+        input.plugin_group_id.clone(),
+        input.plugin_artifact_id.clone(),
+        input.version.clone(),
+    )
+    .await?;
+
+    if let Some(plugin_version) = existing_version {
+        return Err(Error::Conflict(format!(
+            "version already exists with id: {0}",
+            plugin_version.id
+        )));
+    }
 
     if input.file.is_empty() {
         return Err(Error::BadRequest("uploaded file is empty".into()));
