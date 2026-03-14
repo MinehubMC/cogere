@@ -9,7 +9,7 @@ use crate::{
         auth::{login_page, login_post},
         files, groups,
         machine_keys::machinekeys_index,
-        plugins::{self, plugin_upload},
+        plugins,
     },
     storage::filesystem::FilesystemStorage,
 };
@@ -134,6 +134,10 @@ impl Server {
             .route(
                 "/api/v1/groups/{group_id}/plugins",
                 post(plugins::plugin_upload),
+            )
+            .route(
+                "/g/{group_id}/machine-keys",
+                get(groups::group_machine_keys),
             )
             .merge(admin_routes)
             .route_layer(require_login);

@@ -25,7 +25,7 @@ use crate::{
     models::{
         self,
         auth::{PublicUser, User},
-        groups::GroupMember,
+        groups::{GroupMachineKey, GroupMember},
         plugins::GroupPluginSummary,
         settings::InstanceSettings,
     },
@@ -301,6 +301,61 @@ pub async fn groups_plugins(
             messages: messages.into_iter().collect(),
             current_user: Some(user.into()),
             active_tab: "plugins",
+            is_htmx: false,
+        }
+        .render()?
+    };
+
+    Ok(Html(html))
+}
+
+#[derive(Template)]
+#[template(path = "groups/machinekeys.jinja")]
+struct GroupMachineKeysTemplate {
+    group: GroupEntry,
+    keys: Vec<GroupMachineKey>,
+    settings: InstanceSettings,
+    messages: Vec<Message>,
+    current_user: Option<PublicUser>,
+    active_tab: &'static str,
+    is_htmx: bool,
+}
+
+#[derive(Template)]
+#[template(path = "groups/partials/machinekeys_content.jinja")]
+struct GroupMachineKeysPartialTemplate {
+    group: GroupEntry,
+    keys: Vec<GroupMachineKey>,
+    active_tab: &'static str,
+    is_htmx: bool,
+}
+
+pub async fn group_machine_keys(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    messages: Messages,
+    headers: HeaderMap,
+    Path(group_id): Path<Uuid>,
+) -> Result<Html<String>, AppError> {
+    let (group, user) = load_group_context(&state, &auth, group_id).await?;
+    let keys = database::groups::get_group_machine_keys(&state.db, group_id).await?;
+
+    let html = if headers.contains_key("hx-request") {
+        GroupMachineKeysPartialTemplate {
+            group,
+            keys,
+            active_tab: "machinekeys",
+            is_htmx: true,
+        }
+        .render()?
+    } else {
+        GroupMachineKeysTemplate {
+            group,
+            keys,
+            settings: state.settings.read().await.clone(),
+            messages: messages.into_iter().collect(),
+            current_user: Some(user.into()),
+            active_tab: "machinekeys",
             is_htmx: false,
         }
         .render()?

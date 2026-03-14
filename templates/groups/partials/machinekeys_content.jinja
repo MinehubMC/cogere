@@ -1,0 +1,18 @@
+{% if is_htmx %}
+<ul id="group-tabs" hx-swap-oob="outerHTML:#group-tabs">
+  {% include "groups/partials/tabs_items.jinja" %}
+</ul>
+{% endif %}
+
+<table class="table">
+    <thead>
+        <th>id</th>
+        <th>description</th>
+        <th>permissions</th>
+    </thead>
+    {% for key in keys %}
+        <td>{{ key.id }}</td>
+        <td>{{ key.description }}</td>
+        <td>TODO</td>
+    {% endfor %}
+</table>

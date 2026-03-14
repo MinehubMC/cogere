@@ -16,3 +16,9 @@
      hx-target="#tab-content"
      hx-push-url="true">Members</a>
 </li>
+<li class="{% if active_tab == "machinekeys" %}is-active{% endif %}">
+  <a href="/g/{{ group.id }}/machine-keys"
+     hx-get="/g/{{ group.id }}/machine-keys"
+     hx-target="#tab-content"
+     hx-push-url="true">Machine Keys</a>
+</li>

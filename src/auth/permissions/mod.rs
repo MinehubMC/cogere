@@ -1,6 +1,4 @@
 use core::fmt;
-
-use askama::filters::HtmlSafe;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
