@@ -26,6 +26,7 @@ use crate::{
         self,
         auth::{PublicUser, User},
         groups::GroupMember,
+        plugins::GroupPluginSummary,
         settings::InstanceSettings,
     },
     server::AppState,
@@ -257,7 +258,7 @@ pub async fn groups_members(
 #[template(path = "groups/plugins.jinja")]
 struct GroupPluginsTemplate {
     group: GroupEntry,
-    // plugins: Vec<Plugin>,
+    plugins: Vec<GroupPluginSummary>,
     settings: InstanceSettings,
     messages: Vec<Message>,
     current_user: Option<PublicUser>,
@@ -269,7 +270,7 @@ struct GroupPluginsTemplate {
 #[template(path = "groups/partials/plugins_content.jinja")]
 struct GroupPluginsPartialTemplate {
     group: GroupEntry,
-    // plugins: Vec<Plugin>,
+    plugins: Vec<GroupPluginSummary>,
     active_tab: &'static str,
     is_htmx: bool,
 }
@@ -282,12 +283,12 @@ pub async fn groups_plugins(
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
     let (group, user) = load_group_context(&state, &auth, group_id).await?;
-    // let plugins = get_plugins_by_group_id(&state.db, group_id).await?;
+    let plugins = database::groups::get_group_plugins(&state.db, group_id).await?;
 
     let html = if headers.contains_key("hx-request") {
         GroupPluginsPartialTemplate {
             group,
-            // plugins,
+            plugins,
             active_tab: "plugins",
             is_htmx: true,
         }
@@ -295,7 +296,7 @@ pub async fn groups_plugins(
     } else {
         GroupPluginsTemplate {
             group,
-            // plugins,
+            plugins,
             settings: state.settings.read().await.clone(),
             messages: messages.into_iter().collect(),
             current_user: Some(user.into()),

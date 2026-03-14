@@ -1,8 +1,8 @@
 use crate::{
     auth::permissions::GroupRole,
     models::{
-        auth::User,
         groups::{Group, GroupMember},
+        plugins::{GroupPluginSummary, PluginSource, Visibility},
     },
 };
 use sqlx::SqlitePool;
@@ -99,4 +99,74 @@ pub async fn get_group_members(
         .bind(group_id.to_string())
         .fetch_all(pool)
         .await
+}
+
+pub async fn get_group_plugins(
+    pool: &SqlitePool,
+    group_id: Uuid,
+) -> Result<Vec<GroupPluginSummary>, sqlx::Error> {
+    let group_id_str = group_id.to_string();
+    let rows = sqlx::query!(
+        r#"
+        SELECT
+            p.id AS "id!",
+            p.plugin_artifact_id AS "plugin_artifact_id!",
+            p.plugin_group_id AS "plugin_group_id!",
+            p.source AS "source!",
+            p.external_provider AS external_provider,
+            p.external_id AS external_id,
+            gp.visibility AS "visibility!",
+            gp.is_owner AS "is_owner!: i64",
+            pv.version AS latest_version,
+            pv.blob_id AS latest_blob_id
+        FROM group_plugins gp
+        JOIN plugins p ON p.id = gp.plugin_id
+        LEFT JOIN plugin_versions pv ON pv.id = (
+            SELECT id FROM plugin_versions
+            WHERE plugin_id = p.id
+            ORDER BY version DESC
+            LIMIT 1
+        )
+        WHERE gp.group_id = ?
+        ORDER BY gp.attached_at DESC
+        "#,
+        group_id_str,
+    )
+    .fetch_all(pool)
+    .await?;
+
+    rows.into_iter()
+        .map(|r| {
+            let id = Uuid::parse_str(&r.id).map_err(|e| sqlx::Error::ColumnDecode {
+                index: "id".to_string(),
+                source: Box::new(e),
+            })?;
+
+            let source = match r.source.as_str() {
+                "local" => PluginSource::Local,
+                _ => PluginSource::External {
+                    provider: r.external_provider.unwrap_or_default(),
+                    external_id: r.external_id.unwrap_or_default(),
+                },
+            };
+
+            let visibility = match r.visibility.as_str() {
+                "public" => Visibility::Public,
+                _ => Visibility::Private,
+            };
+
+            let is_cached = r.latest_blob_id.is_some();
+
+            Ok(GroupPluginSummary {
+                id,
+                plugin_artifact_id: r.plugin_artifact_id,
+                plugin_group_id: r.plugin_group_id,
+                source,
+                visibility,
+                is_owner: r.is_owner != 0,
+                latest_version: Some(r.latest_version),
+                is_cached,
+            })
+        })
+        .collect()
 }

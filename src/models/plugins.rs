@@ -1,3 +1,5 @@
+use core::fmt;
+
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -10,10 +12,30 @@ pub enum PluginSource {
     },
 }
 
+impl fmt::Display for PluginSource {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PluginSource::Local => f.write_str("local"),
+            PluginSource::External {
+                provider,
+                external_id,
+            } => {
+                write!(f, "external:{provider}:{external_id}")
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Visibility {
     Public,
     Private,
+}
+
+impl fmt::Display for Visibility {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
 }
 
 impl Visibility {
@@ -84,4 +106,15 @@ pub struct GroupPlugin {
     /// defaults to private; owners of local plugins may set it public.
     pub visibility: Visibility,
     pub attached_at: OffsetDateTime,
+}
+
+pub struct GroupPluginSummary {
+    pub id: Uuid,
+    pub plugin_artifact_id: String,
+    pub plugin_group_id: String,
+    pub source: PluginSource,
+    pub visibility: Visibility,
+    pub is_owner: bool,
+    pub latest_version: Option<String>,
+    pub is_cached: bool,
 }

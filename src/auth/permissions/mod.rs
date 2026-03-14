@@ -33,8 +33,6 @@ impl fmt::Display for GroupRole {
     }
 }
 
-impl HtmlSafe for GroupRole {}
-
 #[derive(Debug, thiserror::Error)]
 #[error("invalid group role: {0}")]
 pub struct GroupRoleParseError(String);

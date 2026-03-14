@@ -4,8 +4,6 @@
 </ul>
 {% endif %}
 
-<p>{{ group.description }}</p>
-
 <div id="upload-result"></div>
 
 <form
@@ -38,3 +36,26 @@ document.querySelector('form').addEventListener('htmx:configRequest', (e) => {
   delete e.detail.parameters['version'];
 });
 </script>
+
+<hr />
+
+<table class="table">
+    <thead>
+        <th>id</th>
+        <th>maven id</th>
+        <th>source</th>
+        <th>visibility</th>
+        <th>owner</th>
+        <th>latest version</th>
+        <th>cached</th>
+    </thead>
+    {% for plugin in plugins %}
+        <td>{{ plugin.id }}</td>
+        <td>{{ plugin.plugin_group_id }}:{{ plugin.plugin_artifact_id }}</td>
+        <td>{{ plugin.source }}</td>
+        <td>{{ plugin.visibility }}</td>
+        <td>{{ plugin.is_owner }}</td>
+        <td>{{ plugin.latest_version.as_deref().unwrap_or("-") }}</td>
+        <td>{{ plugin.is_cached }}</td>
+    {% endfor %}
+</table>
