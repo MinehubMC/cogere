@@ -12,12 +12,14 @@ use crate::server::Server;
 use std::{net::SocketAddr, path::PathBuf};
 use tower_sessions::cookie::Key;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use url::Url;
 
 #[derive(Clone)]
 pub struct Config {
     pub data_folder: PathBuf,
     pub socket_addr: SocketAddr,
     pub cookie_key: Key,
+    pub public_base_url: Url,
 }
 
 impl Config {
@@ -47,10 +49,17 @@ impl Config {
             }
         };
 
+        let public_base_url = std::env::var("COGERE_PUBLIC_BASE_URL")
+            .map_err(|_| "COGERE_PUBLIC_BASE_URL is not set".to_string())
+            .and_then(|s| {
+                Url::parse(&s).map_err(|e| format!("invalid COGERE_PUBLIC_BASE_URL: {e}"))
+            })?;
+
         Ok(Self {
             data_folder,
             socket_addr,
             cookie_key,
+            public_base_url,
         })
     }
 }

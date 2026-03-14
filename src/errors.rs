@@ -4,7 +4,7 @@ use axum::{
 };
 use tokio::task;
 
-use crate::storage::StorageError;
+use crate::{assembler::errors::AssemblyError, storage::StorageError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -28,6 +28,10 @@ pub enum Error {
     NotFound(String),
     #[error("conflict: {0}")]
     Conflict(String),
+    #[error("internal server error: {0}")]
+    Internal(String),
+    #[error(transparent)]
+    Assembly(#[from] AssemblyError),
 }
 
 pub struct AppError(Error);
@@ -58,9 +62,11 @@ impl From<askama::Error> for AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let status = match &self.0 {
+        let status = match self.0 {
             Error::Forbidden => StatusCode::FORBIDDEN,
-            Error::BadRequest(_) => StatusCode::BAD_REQUEST,
+            Error::BadRequest(msg) => {
+                return (StatusCode::BAD_REQUEST, msg.clone()).into_response();
+            }
             Error::Unauthorized => StatusCode::UNAUTHORIZED,
             Error::Sqlx(e) => {
                 tracing::error!("database error: {:?}", e);
@@ -86,6 +92,30 @@ impl IntoResponse for AppError {
             }
             Error::Conflict(msg) => {
                 return (StatusCode::CONFLICT, msg.clone()).into_response();
+            }
+            Error::Internal(e) => {
+                tracing::error!("internal error: {:?}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+            Error::Assembly(e) => {
+                let inner = match e {
+                    AssemblyError::ArtifactNotFound(msg) => Error::NotFound(msg.clone()),
+                    AssemblyError::UnsupportedProvider(msg) => Error::BadRequest(msg.clone()),
+                    AssemblyError::ExternalFetch(msg) => Error::Internal(msg.clone()),
+                    AssemblyError::QueueUnavailable => {
+                        Error::Internal("assembly queue unavailable".into())
+                    }
+                    AssemblyError::Timeout(_) => Error::Internal("assembly timed out".into()),
+                    AssemblyError::Sqlx(e) => Error::Sqlx(e),
+                    AssemblyError::Storage(e) => Error::Storage(e),
+                    AssemblyError::Zip(e) => Error::Internal(e.to_string()),
+                    AssemblyError::Io(e) => Error::Internal(e.to_string()),
+                    AssemblyError::Internal(e) => Error::Internal(e.to_string()),
+                    AssemblyError::NoArtifacts => {
+                        Error::BadRequest("no artifacts provided".to_string())
+                    }
+                };
+                return AppError(inner).into_response();
             }
         };
         status.into_response()

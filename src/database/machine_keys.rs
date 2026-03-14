@@ -11,12 +11,6 @@ impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for Found {
     }
 }
 
-pub async fn get_all_machinekeys(pool: &SqlitePool) -> Result<Vec<MachineKey>, sqlx::Error> {
-    sqlx::query_as::<_, MachineKey>("SELECT * FROM machine_keys")
-        .fetch_all(pool)
-        .await
-}
-
 pub async fn get_machinekey_by_id(
     pool: &SqlitePool,
     id: Uuid,

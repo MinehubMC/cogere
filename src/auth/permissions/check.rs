@@ -115,7 +115,7 @@ impl<'a> PermissionChecker<'a> {
                 ResourceType::Group
                 | ResourceType::Plugin
                 | ResourceType::Artifact
-                | ResourceType::MachineToken => *role >= GroupRole::Admin,
+                | ResourceType::MachineKey => *role >= GroupRole::Admin,
                 ResourceType::User => *role >= GroupRole::Owner,
             },
         }

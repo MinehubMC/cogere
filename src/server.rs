@@ -1,15 +1,14 @@
 use crate::{
     Config,
+    assembler::{job::AssemblyJob, worker},
     auth::{admin::require_admin, auth::Backend},
     database::settings::load_instance_settings,
     errors::Error,
     models::settings::InstanceSettings,
     routes::{
-        admin, assets,
+        admin, assembler, assets,
         auth::{login_page, login_post},
-        files, groups,
-        machine_keys::machinekeys_index,
-        plugins,
+        files, groups, plugins,
     },
     storage::filesystem::FilesystemStorage,
 };
@@ -29,9 +28,14 @@ use axum_login::{
 };
 use axum_messages::MessagesManagerLayer;
 use sqlx::SqlitePool;
-use std::sync::Arc;
+use std::sync::{Arc, atomic::AtomicUsize};
 use time::Duration;
-use tokio::{net::TcpListener, signal, sync::RwLock, task::AbortHandle};
+use tokio::{
+    net::TcpListener,
+    signal,
+    sync::{RwLock, mpsc},
+    task::AbortHandle,
+};
 use tower::{BoxError, ServiceBuilder};
 use tower_http::{limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tower_sessions::Expiry;
@@ -43,6 +47,8 @@ pub struct AppState {
     pub config: Arc<Config>,
     pub storage: FilesystemStorage,
     pub settings: Arc<RwLock<InstanceSettings>>,
+    pub assembly_tx: mpsc::Sender<AssemblyJob>,
+    pub active_assembly_jobs: Arc<AtomicUsize>,
 }
 
 pub struct Server {
@@ -110,12 +116,26 @@ impl Server {
 
         let settings = load_instance_settings(&self.db).await?;
 
+        const ASSEMBLY_QUEUE_SIZE: usize = 100;
+
+        let (assembly_tx, assembly_rx) = mpsc::channel::<AssemblyJob>(ASSEMBLY_QUEUE_SIZE);
+
         let state = AppState {
             db: self.db,
             config: Arc::new(self.config.clone()),
             storage: FilesystemStorage::new(self.config.data_folder),
             settings: Arc::new(RwLock::new(settings)),
+            assembly_tx,
+            active_assembly_jobs: Arc::new(AtomicUsize::new(0)),
         };
+
+        tokio::spawn(worker::run(
+            assembly_rx,
+            state.db.clone(),
+            state.settings.clone(),
+            state.storage.clone(),
+            state.active_assembly_jobs.clone(),
+        ));
 
         let admin_routes = Router::new()
             .route("/admin/settings", get(admin::settings_index))
@@ -123,21 +143,28 @@ impl Server {
             .route_layer(middleware::from_fn(require_admin));
 
         let authenticated_routes = Router::new()
-            .route("/machine-keys", get(machinekeys_index))
             .route(
                 "/groups",
                 get(groups::groups_index).post(groups::create_group),
             )
             .route("/g/{group_id}", get(groups::groups_detail))
-            .route("/g/{group_id}/members", get(groups::groups_members))
-            .route("/g/{group_id}/plugins", get(groups::groups_plugins))
-            .route(
-                "/api/v1/groups/{group_id}/plugins",
-                post(plugins::plugin_upload),
-            )
             .route(
                 "/g/{group_id}/machine-keys",
                 get(groups::group_machine_keys),
+            )
+            .route("/g/{group_id}/members", get(groups::groups_members))
+            .route("/g/{group_id}/plugins", get(groups::groups_plugins))
+            .route(
+                "/api/v1/groups/{group_id}/assemble",
+                post(assembler::request_assembly),
+            )
+            .route(
+                "/api/v1/groups/{group_id}/assemblies/{id}",
+                get(assembler::get_assembly),
+            )
+            .route(
+                "/api/v1/groups/{group_id}/plugins",
+                post(plugins::plugin_upload),
             )
             .merge(admin_routes)
             .route_layer(require_login);

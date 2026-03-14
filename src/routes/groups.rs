@@ -228,6 +228,10 @@ pub async fn groups_members(
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
     let (group, user) = load_group_context(&state, &auth, group_id).await?;
+    PermissionChecker::new(&state.db, &AuthenticatedEntity::User(user.clone()))
+        .require(PermissionCheck::on_type(ResourceType::User, Action::List).in_group(group_id))
+        .await?;
+
     let members = get_group_members(&state.db, group_id).await?;
 
     let html = if headers.contains_key("hx-request") {
@@ -283,6 +287,10 @@ pub async fn groups_plugins(
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
     let (group, user) = load_group_context(&state, &auth, group_id).await?;
+    PermissionChecker::new(&state.db, &AuthenticatedEntity::User(user.clone()))
+        .require(PermissionCheck::on_type(ResourceType::Plugin, Action::List).in_group(group_id))
+        .await?;
+
     let plugins = database::groups::get_group_plugins(&state.db, group_id).await?;
 
     let html = if headers.contains_key("hx-request") {
@@ -338,6 +346,12 @@ pub async fn group_machine_keys(
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
     let (group, user) = load_group_context(&state, &auth, group_id).await?;
+    PermissionChecker::new(&state.db, &AuthenticatedEntity::User(user.clone()))
+        .require(
+            PermissionCheck::on_type(ResourceType::MachineKey, Action::List).in_group(group_id),
+        )
+        .await?;
+
     let keys = database::groups::get_group_machine_keys(&state.db, group_id).await?;
 
     let html = if headers.contains_key("hx-request") {

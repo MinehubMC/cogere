@@ -1,3 +1,4 @@
+pub mod assembly;
 pub mod blobs;
 pub mod groups;
 pub mod machine_keys;

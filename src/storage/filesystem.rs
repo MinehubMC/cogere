@@ -1,4 +1,4 @@
-use std::{os::unix::fs::MetadataExt, path::PathBuf};
+use std::{os::unix::fs::MetadataExt, path::PathBuf, sync::Arc};
 
 use bytes::Bytes;
 use tokio::{
@@ -11,12 +11,14 @@ use crate::storage::{LocalStorage, StorageError};
 
 #[derive(Clone, Debug)]
 pub struct FilesystemStorage {
-    root: PathBuf,
+    root: Arc<PathBuf>,
 }
 
 impl FilesystemStorage {
     pub fn new(root: PathBuf) -> Self {
-        Self { root }
+        Self {
+            root: Arc::new(root),
+        }
     }
 
     fn path_for(&self, key: Uuid) -> PathBuf {

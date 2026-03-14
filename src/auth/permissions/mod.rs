@@ -54,7 +54,7 @@ pub enum ResourceType {
     Plugin,
     Artifact,
     Group,
-    MachineToken,
+    MachineKey,
     User,
 }
 
@@ -64,7 +64,7 @@ impl ResourceType {
             Self::Plugin => "plugin",
             Self::Artifact => "artifact",
             Self::Group => "group",
-            Self::MachineToken => "machine_token",
+            Self::MachineKey => "machine_key",
             Self::User => "user",
         }
     }

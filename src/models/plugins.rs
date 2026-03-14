@@ -1,6 +1,4 @@
 use core::fmt;
-
-use time::OffsetDateTime;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -95,17 +93,6 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for Blob {
             ref_count: row.try_get("ref_count")?,
         })
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct GroupPlugin {
-    pub group_id: Uuid,
-    pub plugin_id: Uuid,
-    /// true only for the group that uploaded a local plugin.
-    pub is_owner: bool,
-    /// defaults to private; owners of local plugins may set it public.
-    pub visibility: Visibility,
-    pub attached_at: OffsetDateTime,
 }
 
 pub struct GroupPluginSummary {
