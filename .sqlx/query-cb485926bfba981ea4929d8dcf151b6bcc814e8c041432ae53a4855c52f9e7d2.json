@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT size_bytes FROM blobs WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "size_bytes",
+        "ordinal": 0,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "cb485926bfba981ea4929d8dcf151b6bcc814e8c041432ae53a4855c52f9e7d2"
+}

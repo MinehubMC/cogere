@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO blob_refs (blob_id, group_id, entity_type, entity_id)\n         VALUES (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "f4b223adf523faf5912af926bbe256944500ba2a6829d536ad7ff67a5949b572"
+}

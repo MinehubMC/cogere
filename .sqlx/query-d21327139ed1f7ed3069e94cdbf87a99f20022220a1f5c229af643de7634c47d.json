@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            pv.id AS \"id!\",\n            pv.plugin_id AS \"plugin_id!\",\n            pv.version AS \"version!\",\n            pv.blob_id AS blob_id\n        FROM plugin_versions pv\n        JOIN plugins p ON p.id  = pv.plugin_id\n        JOIN group_plugins gp ON gp.plugin_id = p.id\n        WHERE gp.group_id = ?\n          AND p.plugin_group_id = ?\n          AND p.plugin_artifact_id = ?\n          AND pv.version = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "plugin_id!",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "version!",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "blob_id",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "d21327139ed1f7ed3069e94cdbf87a99f20022220a1f5c229af643de7634c47d"
+}

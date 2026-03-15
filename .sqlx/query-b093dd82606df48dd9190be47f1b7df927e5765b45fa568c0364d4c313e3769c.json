@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE groups SET used_bytes = used_bytes - ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "b093dd82606df48dd9190be47f1b7df927e5765b45fa568c0364d4c313e3769c"
+}

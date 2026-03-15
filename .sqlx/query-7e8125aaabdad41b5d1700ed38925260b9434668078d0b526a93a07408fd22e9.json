@@ -1,0 +1,74 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            p.id AS \"id!\",\n            p.plugin_artifact_id AS \"plugin_artifact_id!\",\n            p.plugin_group_id AS \"plugin_group_id!\",\n            p.source AS \"source!\",\n            p.external_provider AS external_provider,\n            p.external_id AS external_id,\n            gp.visibility AS \"visibility!\",\n            gp.is_owner AS \"is_owner!: i64\",\n            pv.version AS latest_version,\n            pv.blob_id AS latest_blob_id\n        FROM group_plugins gp\n        JOIN plugins p ON p.id = gp.plugin_id\n        LEFT JOIN plugin_versions pv ON pv.id = (\n            SELECT id FROM plugin_versions\n            WHERE plugin_id = p.id\n            ORDER BY version DESC\n            LIMIT 1\n        )\n        WHERE gp.group_id = ?\n        ORDER BY gp.attached_at DESC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "plugin_artifact_id!",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "plugin_group_id!",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "source!",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "external_provider",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "external_id",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "visibility!",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "is_owner!: i64",
+        "ordinal": 7,
+        "type_info": "Integer"
+      },
+      {
+        "name": "latest_version",
+        "ordinal": 8,
+        "type_info": "Text"
+      },
+      {
+        "name": "latest_blob_id",
+        "ordinal": 9,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "7e8125aaabdad41b5d1700ed38925260b9434668078d0b526a93a07408fd22e9"
+}

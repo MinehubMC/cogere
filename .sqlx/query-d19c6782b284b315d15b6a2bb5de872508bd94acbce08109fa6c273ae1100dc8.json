@@ -1,0 +1,68 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            p.id as plugin_id,\n            p.plugin_group_id,\n            p.plugin_artifact_id,\n            p.source,\n            p.external_provider,\n            p.external_id,\n            pv.id as version_id,\n            pv.version,\n            pv.blob_id\n        FROM plugins p\n        JOIN plugin_versions pv ON pv.plugin_id = p.id\n        JOIN group_plugins gp ON gp.plugin_id = p.id\n        WHERE p.plugin_group_id = ?\n          AND p.plugin_artifact_id = ?\n          AND pv.version = ?\n          AND gp.group_id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "plugin_id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "plugin_group_id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "plugin_artifact_id",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "source",
+        "ordinal": 3,
+        "type_info": "Text"
+      },
+      {
+        "name": "external_provider",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "external_id",
+        "ordinal": 5,
+        "type_info": "Text"
+      },
+      {
+        "name": "version_id",
+        "ordinal": 6,
+        "type_info": "Text"
+      },
+      {
+        "name": "version",
+        "ordinal": 7,
+        "type_info": "Text"
+      },
+      {
+        "name": "blob_id",
+        "ordinal": 8,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "d19c6782b284b315d15b6a2bb5de872508bd94acbce08109fa6c273ae1100dc8"
+}

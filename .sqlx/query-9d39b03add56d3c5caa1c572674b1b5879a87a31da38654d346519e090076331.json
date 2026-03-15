@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO assembly_artifacts (assembly_id, group_id, artifact_id, version)\n             VALUES (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "9d39b03add56d3c5caa1c572674b1b5879a87a31da38654d346519e090076331"
+}

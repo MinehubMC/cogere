@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO assemblies (id, group_id)\n         VALUES (?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "c9c1a879cb39680ea63b60238180dbedde585804b559a5d82e7bbe6d1df5fc53"
+}

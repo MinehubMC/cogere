@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE assemblies SET status = 'completed', completed_at = ?, updated_at = ?, blob_id = ?, expires_at = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "667d6d1fa6b28eab846598c9e1c39553e65a662442bc869c4698e23953d3a254"
+}

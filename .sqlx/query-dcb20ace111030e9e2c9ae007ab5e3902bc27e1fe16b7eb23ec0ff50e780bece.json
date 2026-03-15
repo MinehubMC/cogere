@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT group_id, artifact_id, version\n        FROM assembly_artifacts\n        WHERE assembly_id = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "group_id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "artifact_id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "version",
+        "ordinal": 2,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "dcb20ace111030e9e2c9ae007ab5e3902bc27e1fe16b7eb23ec0ff50e780bece"
+}

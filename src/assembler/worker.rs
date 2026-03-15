@@ -19,7 +19,10 @@ use crate::{
         assembly::{get_artifact, set_assembly_status},
         blobs::create_blob,
     },
-    models::{assembly::AssemblyStatus, plugins::PluginSource, settings::InstanceSettings},
+    models::{
+        assembly::AssemblyStatus, blobs::BlobEntityType, plugins::PluginSource,
+        settings::InstanceSettings,
+    },
     storage::{LocalStorage, StorageError, filesystem::FilesystemStorage},
 };
 
@@ -136,9 +139,21 @@ async fn process(
     let blob_id = Uuid::now_v7();
     let size_bytes = zip_bytes.len() as i64;
 
-    create_blob(pool, blob_id, sha256, size_bytes).await?;
+    let mut tx = pool.begin().await?;
+
+    create_blob(
+        &mut *tx,
+        job.group_id,
+        blob_id,
+        BlobEntityType::Assembly { id: job.id },
+        sha256,
+        size_bytes,
+    )
+    .await?;
 
     storage.put(blob_id, zip_bytes).await?;
+
+    tx.commit().await?;
 
     Ok(blob_id)
 }

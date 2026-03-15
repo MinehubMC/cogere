@@ -12,6 +12,7 @@ use crate::{
     server::AppState,
 };
 
+pub mod cleanup;
 pub mod errors;
 pub mod job;
 pub mod worker;

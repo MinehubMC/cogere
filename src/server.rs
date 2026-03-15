@@ -137,6 +137,12 @@ impl Server {
             state.active_assembly_jobs.clone(),
         ));
 
+        tokio::spawn(crate::assembler::cleanup::run(
+            state.db.clone(),
+            state.storage.clone(),
+            state.settings.clone(),
+        ));
+
         let admin_routes = Router::new()
             .route("/admin/settings", get(admin::settings_index))
             .route("/admin/settings/reload", post(admin::settings_reload))

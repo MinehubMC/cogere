@@ -1,0 +1,38 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT status, blob_id, expires_at, error FROM assemblies WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "status",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "blob_id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "expires_at",
+        "ordinal": 2,
+        "type_info": "Text"
+      },
+      {
+        "name": "error",
+        "ordinal": 3,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "4e4fd8d65c2c8c62890228de99be3e94068284a02d6ea2bfb56768e93967e963"
+}

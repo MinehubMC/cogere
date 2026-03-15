@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM assemblies WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "6ab73ac851f0ca4aa4c6261644e8c0270d6e69f5feee4479ee8f048c3a0ce4ae"
+}

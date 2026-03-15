@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE assemblies SET status = 'running', started_at = ?, updated_at = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "be6db09a07defe335225b270c0acf8a77d43eeea7c31d931051fa6b3aafb54ba"
+}

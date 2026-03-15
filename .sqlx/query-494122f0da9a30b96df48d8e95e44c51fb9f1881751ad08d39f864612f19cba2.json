@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE assemblies SET status = 'failed', completed_at = ?, updated_at = ?, error = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "494122f0da9a30b96df48d8e95e44c51fb9f1881751ad08d39f864612f19cba2"
+}

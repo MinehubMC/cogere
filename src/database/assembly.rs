@@ -1,13 +1,17 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use crate::{
     assembler::{ArtifactCoordinate, errors::AssemblyError},
+    database::blobs::remove_blob_ref,
+    errors::Error,
     models::{
         assembly::{Assembly, AssemblyStatus, ResolvedArtifact},
+        blobs::BlobEntityType,
         plugins::{Plugin, PluginSource, PluginVersion},
     },
+    storage::filesystem::FilesystemStorage,
 };
 
 pub async fn create_assembly(
@@ -351,4 +355,69 @@ pub async fn get_assembly_status(
     };
 
     Ok(Some(status))
+}
+
+pub async fn cleanup_expired_assemblies(
+    pool: &SqlitePool,
+    storage: &FilesystemStorage,
+) -> Result<(), Error> {
+    let expired = sqlx::query!(
+        "SELECT id, group_id, blob_id FROM assemblies
+         WHERE status = 'completed' AND expires_at < datetime('now')
+         AND blob_id IS NOT NULL"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    for row in expired {
+        let assembly_id = Uuid::try_parse(&row.id).map_err(|_| sqlx::Error::ColumnDecode {
+            index: "id".into(),
+            source: "invalid assembly id".into(),
+        })?;
+        let group_id = Uuid::try_parse(&row.group_id).map_err(|_| sqlx::Error::ColumnDecode {
+            index: "group_id".into(),
+            source: "invalid group_id".into(),
+        })?;
+        let blob_id = row
+            .blob_id
+            .as_deref()
+            .and_then(|s| Uuid::parse_str(s).ok())
+            .ok_or_else(|| sqlx::Error::ColumnDecode {
+                index: "blob_id".into(),
+                source: "completed assembly missing blob_id".into(),
+            })?;
+
+        remove_blob_ref(
+            pool,
+            storage,
+            blob_id,
+            group_id,
+            BlobEntityType::Assembly { id: assembly_id },
+        )
+        .await?;
+
+        sqlx::query!("DELETE FROM assemblies WHERE id = ?", row.id)
+            .execute(pool)
+            .await?;
+    }
+
+    Ok(())
+}
+
+pub async fn cleanup_old_assemblies(pool: &SqlitePool, older_than: Duration) -> Result<(), Error> {
+    let threshold = Utc::now() - older_than;
+    let threshold_uuid = Uuid::new_v7(uuid::Timestamp::from_unix(
+        uuid::NoContext,
+        threshold.timestamp() as u64,
+        0,
+    ));
+    let threshold_str = threshold_uuid.to_string();
+
+    sqlx::query!(
+        "DELETE FROM assemblies WHERE status != 'completed' AND id < ?",
+        threshold_str,
+    )
+    .execute(pool)
+    .await?;
+    Ok(())
 }

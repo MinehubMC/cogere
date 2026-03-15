@@ -1,0 +1,32 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT id, group_id, blob_id FROM assemblies\n         WHERE status = 'completed' AND expires_at < datetime('now')\n         AND blob_id IS NOT NULL",
+  "describe": {
+    "columns": [
+      {
+        "name": "id",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "group_id",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "blob_id",
+        "ordinal": 2,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "e52c971d0e3738db4b4be6fbeb5fdb674d8d38feeb950f7c89eae67d96bb1dd5"
+}

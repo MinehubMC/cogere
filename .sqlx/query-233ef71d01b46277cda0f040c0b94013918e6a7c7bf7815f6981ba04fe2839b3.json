@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM assemblies WHERE status != 'completed' AND id < ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "233ef71d01b46277cda0f040c0b94013918e6a7c7bf7815f6981ba04fe2839b3"
+}

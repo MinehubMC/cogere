@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "UPDATE assemblies SET status = 'pending', updated_at = ? WHERE id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "024a1a1b7499ecc76601ec1c8bb3ff7145289d0ca132ad9c079e8e2e603f849b"
+}

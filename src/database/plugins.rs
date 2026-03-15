@@ -1,7 +1,10 @@
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use crate::models::plugins::PluginVersion;
+use crate::{
+    database::blobs,
+    models::{blobs::BlobEntityType, plugins::PluginVersion},
+};
 
 pub struct CreateLocalPluginOptions {
     pub plugin_id: Uuid,
@@ -28,31 +31,22 @@ pub async fn create_local_plugin(
     let group_id = input.group_id.to_string();
     let size_bytes = input.size_bytes as i64;
 
+    let entity = BlobEntityType::Plugin {
+        id: input.plugin_id,
+    };
+
     if input.is_new_blob {
-        sqlx::query!(
-            "INSERT INTO blobs (id, sha256, size_bytes, ref_count)
-             VALUES (?, ?, ?, 1)",
-            blob_id,
+        blobs::create_blob(
+            &mut *tx,
+            input.group_id,
+            input.blob_id,
+            entity,
             input.sha256,
             size_bytes,
         )
-        .execute(&mut *tx)
-        .await?;
-
-        sqlx::query!(
-            "UPDATE groups SET used_bytes = used_bytes + ? WHERE id = ?",
-            size_bytes,
-            group_id,
-        )
-        .execute(&mut *tx)
         .await?;
     } else {
-        sqlx::query!(
-            "UPDATE blobs SET ref_count = ref_count + 1 WHERE id = ?",
-            blob_id,
-        )
-        .execute(&mut *tx)
-        .await?;
+        blobs::add_blob_ref(&mut *tx, input.group_id, input.blob_id, entity).await?;
     }
 
     sqlx::query!(

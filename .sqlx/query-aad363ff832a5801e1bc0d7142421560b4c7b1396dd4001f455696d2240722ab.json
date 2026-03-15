@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM blob_refs WHERE blob_id = ? AND entity_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "aad363ff832a5801e1bc0d7142421560b4c7b1396dd4001f455696d2240722ab"
+}
