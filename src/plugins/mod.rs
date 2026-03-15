@@ -33,7 +33,7 @@ pub async fn upload_plugin(
 ) -> Result<UploadPluginOutput, Error> {
     PermissionChecker::new(&state.db, &entity)
         .require(
-            PermissionCheck::on_type(ResourceType::Plugin, Action::Create).in_group(input.group_id),
+            PermissionCheck::new(ResourceType::Plugin, Action::Create).in_group(input.group_id),
         )
         .await?;
 

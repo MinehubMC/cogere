@@ -38,7 +38,7 @@ pub async fn plugin_upload(
     mut multipart: Multipart,
 ) -> Result<Json<PluginUploadResponse>, AppError> {
     PermissionChecker::new(&state.db, &entity)
-        .require(PermissionCheck::on_type(ResourceType::Plugin, Action::Create).in_group(group_id))
+        .require(PermissionCheck::new(ResourceType::Plugin, Action::Create).in_group(group_id))
         .await?;
 
     tracing::debug!(

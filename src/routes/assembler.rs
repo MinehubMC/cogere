@@ -57,7 +57,11 @@ pub async fn get_assembly(
     Path((group_id, id)): Path<(Uuid, Uuid)>,
 ) -> Result<Response, AppError> {
     PermissionChecker::new(&state.db, &entity)
-        .require(PermissionCheck::on_type(ResourceType::Artifact, Action::Get).in_group(group_id))
+        .require(
+            PermissionCheck::new(ResourceType::Artifact, Action::Get)
+                .in_group(group_id)
+                .with_resource_id(id),
+        )
         .await?;
 
     match database::assembly::get_assembly(&state.db, group_id, id).await {
@@ -73,7 +77,11 @@ pub async fn download_assembly(
     Path((group_id, id)): Path<(Uuid, Uuid)>,
 ) -> Result<Response, AppError> {
     PermissionChecker::new(&state.db, &entity)
-        .require(PermissionCheck::on_type(ResourceType::Artifact, Action::Get).in_group(group_id))
+        .require(
+            PermissionCheck::new(ResourceType::Artifact, Action::Get)
+                .in_group(group_id)
+                .with_resource_id(id),
+        )
         .await?;
 
     let status = database::assembly::get_assembly_status(&state.db, id)

@@ -100,7 +100,7 @@ pub struct PermissionCheck {
 }
 
 impl PermissionCheck {
-    pub fn on_type(resource_type: ResourceType, action: Action) -> Self {
+    pub fn new(resource_type: ResourceType, action: Action) -> Self {
         Self {
             resource_type,
             resource_id: None,
@@ -109,13 +109,9 @@ impl PermissionCheck {
         }
     }
 
-    pub fn on_instance(resource_type: ResourceType, id: Uuid, action: Action) -> Self {
-        Self {
-            resource_type,
-            resource_id: Some(id),
-            action,
-            group_id: None,
-        }
+    pub fn with_resource_id(mut self, id: Uuid) -> Self {
+        self.resource_id = Some(id);
+        self
     }
 
     pub fn in_group(mut self, group_id: Uuid) -> Self {

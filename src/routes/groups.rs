@@ -68,7 +68,7 @@ pub async fn groups_index(
     let entity = AuthenticatedEntity::User(user.clone());
 
     PermissionChecker::new(&state.db, &entity)
-        .require(PermissionCheck::on_type(ResourceType::Group, Action::List))
+        .require(PermissionCheck::new(ResourceType::Group, Action::List))
         .await?;
 
     let groups = get_memberships_by_user_id(&state.db, entity.raw_uuid())
@@ -116,10 +116,7 @@ pub async fn create_group(
     }
 
     PermissionChecker::new(&state.db, &entity)
-        .require(PermissionCheck::on_type(
-            ResourceType::Group,
-            Action::Create,
-        ))
+        .require(PermissionCheck::new(ResourceType::Group, Action::Create))
         .await?;
 
     let group =
@@ -137,15 +134,24 @@ async fn load_group_context(
     state: &AppState,
     auth: &AuthSession,
     group_id: Uuid,
+    resource_check: Option<PermissionCheck>,
 ) -> Result<(GroupEntry, User), AppError> {
     let user: User = auth.user().await.ok_or(Error::Unauthorized)?;
     let entity = AuthenticatedEntity::User(user.clone());
-    PermissionChecker::new(&state.db, &entity)
-        .require(PermissionCheck::on_type(ResourceType::Group, Action::Get))
+    let checker = PermissionChecker::new(&state.db, &entity);
+
+    checker
+        .require(PermissionCheck::new(ResourceType::Group, Action::Get).in_group(group_id))
         .await?;
+
+    if let Some(check) = resource_check {
+        checker.require(check.in_group(group_id)).await?;
+    }
+
     let group = get_group_by_id_and_user_id(&state.db, group_id, entity.raw_uuid())
         .await?
         .into();
+
     Ok((group, user))
 }
 
@@ -196,7 +202,7 @@ pub async fn groups_detail(
     headers: HeaderMap,
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
-    let (group, user) = load_group_context(&state, &auth, group_id).await?;
+    let (group, user) = load_group_context(&state, &auth, group_id, None).await?;
 
     let html = if headers.contains_key("hx-request") {
         GroupOverviewPartialTemplate {
@@ -227,10 +233,13 @@ pub async fn groups_members(
     headers: HeaderMap,
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
-    let (group, user) = load_group_context(&state, &auth, group_id).await?;
-    PermissionChecker::new(&state.db, &AuthenticatedEntity::User(user.clone()))
-        .require(PermissionCheck::on_type(ResourceType::User, Action::List).in_group(group_id))
-        .await?;
+    let (group, user) = load_group_context(
+        &state,
+        &auth,
+        group_id,
+        Some(PermissionCheck::new(ResourceType::User, Action::List)),
+    )
+    .await?;
 
     let members = get_group_members(&state.db, group_id).await?;
 
@@ -286,10 +295,13 @@ pub async fn groups_plugins(
     headers: HeaderMap,
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
-    let (group, user) = load_group_context(&state, &auth, group_id).await?;
-    PermissionChecker::new(&state.db, &AuthenticatedEntity::User(user.clone()))
-        .require(PermissionCheck::on_type(ResourceType::Plugin, Action::List).in_group(group_id))
-        .await?;
+    let (group, user) = load_group_context(
+        &state,
+        &auth,
+        group_id,
+        Some(PermissionCheck::new(ResourceType::Plugin, Action::List)),
+    )
+    .await?;
 
     let plugins = database::groups::get_group_plugins(&state.db, group_id).await?;
 
@@ -345,12 +357,13 @@ pub async fn group_machine_keys(
     headers: HeaderMap,
     Path(group_id): Path<Uuid>,
 ) -> Result<Html<String>, AppError> {
-    let (group, user) = load_group_context(&state, &auth, group_id).await?;
-    PermissionChecker::new(&state.db, &AuthenticatedEntity::User(user.clone()))
-        .require(
-            PermissionCheck::on_type(ResourceType::MachineKey, Action::List).in_group(group_id),
-        )
-        .await?;
+    let (group, user) = load_group_context(
+        &state,
+        &auth,
+        group_id,
+        Some(PermissionCheck::new(ResourceType::MachineKey, Action::List)),
+    )
+    .await?;
 
     let keys = database::groups::get_group_machine_keys(&state.db, group_id).await?;
 

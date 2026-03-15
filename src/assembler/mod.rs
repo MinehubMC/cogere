@@ -37,7 +37,7 @@ pub async fn request_assembly(
     artifacts: Vec<ArtifactCoordinate>,
 ) -> Result<RequestAssemblyResponse, Error> {
     PermissionChecker::new(&state.db, &entity)
-        .require(PermissionCheck::on_type(ResourceType::Artifact, Action::Get).in_group(group_id))
+        .require(PermissionCheck::new(ResourceType::Artifact, Action::Get).in_group(group_id))
         .await?;
 
     if artifacts.len() == 0 {
