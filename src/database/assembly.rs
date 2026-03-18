@@ -387,6 +387,17 @@ pub async fn cleanup_expired_assemblies(
                 source: "completed assembly missing blob_id".into(),
             })?;
 
+        sqlx::query!(
+            "DELETE FROM assembly_artifacts WHERE assembly_id = ?",
+            row.id
+        )
+        .execute(pool)
+        .await?;
+
+        sqlx::query!("DELETE FROM assemblies WHERE id = ?", row.id)
+            .execute(pool)
+            .await?;
+
         remove_blob_ref(
             pool,
             storage,
@@ -395,10 +406,6 @@ pub async fn cleanup_expired_assemblies(
             BlobEntityType::Assembly { id: assembly_id },
         )
         .await?;
-
-        sqlx::query!("DELETE FROM assemblies WHERE id = ?", row.id)
-            .execute(pool)
-            .await?;
     }
 
     Ok(())

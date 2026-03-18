@@ -24,7 +24,6 @@ pub async fn run(
             )
         };
 
-        tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)).await;
         if let Err(e) = cleanup_expired_assemblies(&pool, &storage).await {
             tracing::error!(error = %e, "assembly cleanup failed");
         }
@@ -32,5 +31,7 @@ pub async fn run(
         if let Err(e) = cleanup_old_assemblies(&pool, Duration::days(max_age_days)).await {
             tracing::error!(error = %e, "old assembly cleanup failed");
         }
+
+        tokio::time::sleep(tokio::time::Duration::from_secs(interval_secs)).await;
     }
 }
