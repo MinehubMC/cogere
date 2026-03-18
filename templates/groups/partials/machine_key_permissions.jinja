@@ -1,0 +1,86 @@
+<div id="perms-{{ key_id }}">
+
+  {% if permissions.is_empty() %}
+    <p class="has-text-grey mb-4">No permissions assigned yet.</p>
+  {% else %}
+    <table class="table is-fullwidth is-striped is-hoverable mb-4">
+      <thead>
+        <tr>
+          <th>Resource</th>
+          <th>Action</th>
+          <th>Scope</th>
+          <th style="width:3rem"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for perm in permissions %}
+        <tr>
+          <td class="is-vcentered"><code>{{ perm.resource_type }}</code></td>
+          <td class="is-vcentered"><code>{{ perm.action }}</code></td>
+          <td class="is-vcentered">
+            {% if let Some(rid) = perm.resource_id %}
+              <span class="tag is-warning is-light is-family-monospace">{{ rid }}</span>
+            {% else %}
+              <span class="tag is-info is-light">wide</span>
+            {% endif %}
+          </td>
+          <td class="is-vcentered">
+            <button class="button is-danger is-small is-outlined"
+                    hx-delete="/g/{{ group.id }}/machine-keys/{{ key_id }}/permissions"
+                    hx-vals='{"resource_type":"{{ perm.resource_type }}","action":"{{ perm.action }}","resource_id":"{% if let Some(rid) = perm.resource_id %}{{ rid }}{% endif %}"}'
+                    hx-target="#perms-{{ key_id }}"
+                    hx-swap="outerHTML">
+              ✕
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <form hx-post="/g/{{ group.id }}/machine-keys/{{ key_id }}/permissions"
+        hx-target="#perms-{{ key_id }}"
+        hx-swap="outerHTML">
+    <div class="field is-grouped is-grouped-multiline">
+      <div class="control">
+        <label class="label is-small">Resource</label>
+        <div class="select is-small">
+          <select name="resource_type">
+            <option value="artifact">artifact</option>
+            <option value="plugin">plugin</option>
+            <option value="group">group</option>
+            <option value="machine_key">machine key</option>
+            <option value="user">user</option>
+          </select>
+        </div>
+      </div>
+      <div class="control">
+        <label class="label is-small">Action</label>
+        <div class="select is-small">
+          <select name="action">
+            <option value="get">get</option>
+            <option value="list">list</option>
+            <option value="create">create</option>
+            <option value="delete">delete</option>
+            <option value="manage">manage</option>
+          </select>
+        </div>
+      </div>
+      <div class="control">
+        <label class="label is-small">
+          Resource ID
+          <span class="has-text-grey has-text-weight-normal">(blank = wide)</span>
+        </label>
+        <input class="input is-small"
+               type="text"
+               name="resource_id"
+               placeholder="optional UUID" />
+      </div>
+      <div class="control" style="align-self:flex-end">
+        <button type="submit" class="button is-primary is-small">Add</button>
+      </div>
+    </div>
+  </form>
+
+</div>

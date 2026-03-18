@@ -49,7 +49,9 @@ impl std::str::FromStr for GroupRole {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Deserialize, Serialize)]
+#[sqlx(type_name = "TEXT", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum ResourceType {
     Plugin,
     Artifact,
@@ -58,19 +60,39 @@ pub enum ResourceType {
     User,
 }
 
-impl ResourceType {
-    pub fn as_str(&self) -> &'static str {
+#[derive(Debug, thiserror::Error)]
+#[error("invalid resource type: {0}")]
+pub struct ResourceTypeParseError(String);
+
+impl fmt::Display for ResourceType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Plugin => "plugin",
-            Self::Artifact => "artifact",
-            Self::Group => "group",
-            Self::MachineKey => "machine_key",
-            Self::User => "user",
+            ResourceType::Plugin => write!(f, "plugin"),
+            ResourceType::Artifact => write!(f, "artifact"),
+            ResourceType::Group => write!(f, "group"),
+            ResourceType::MachineKey => write!(f, "machine_key"),
+            ResourceType::User => write!(f, "user"),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+impl std::str::FromStr for ResourceType {
+    type Err = ResourceTypeParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "plugin" => Ok(Self::Plugin),
+            "artifact" => Ok(Self::Artifact),
+            "group" => Ok(Self::Group),
+            "machine_key" => Ok(Self::MachineKey),
+            "user" => Ok(Self::User),
+            other => Err(ResourceTypeParseError(other.to_string())),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::Type, Deserialize, Serialize)]
+#[sqlx(type_name = "TEXT", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum Action {
     Create,
     Get,
@@ -79,14 +101,32 @@ pub enum Action {
     Manage,
 }
 
-impl Action {
-    pub fn as_str(&self) -> &'static str {
+#[derive(Debug, thiserror::Error)]
+#[error("invalid action: {0}")]
+pub struct ActionParseError(String);
+
+impl fmt::Display for Action {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Create => "create",
-            Self::Get => "get",
-            Self::List => "list",
-            Self::Delete => "delete",
-            Self::Manage => "manage",
+            Action::Create => write!(f, "create"),
+            Action::Get => write!(f, "get"),
+            Action::List => write!(f, "list"),
+            Action::Delete => write!(f, "delete"),
+            Action::Manage => write!(f, "manage"),
+        }
+    }
+}
+
+impl std::str::FromStr for Action {
+    type Err = ActionParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "create" => Ok(Self::Create),
+            "get" => Ok(Self::Get),
+            "list" => Ok(Self::List),
+            "delete" => Ok(Self::Delete),
+            "manage" => Ok(Self::Manage),
+            other => Err(ActionParseError(other.to_string())),
         }
     }
 }

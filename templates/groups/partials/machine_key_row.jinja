@@ -1,0 +1,26 @@
+<tr id="key-row-{{ key.id }}">
+  <td class="is-vcentered">
+    <p class="has-text-weight-medium">{{ key.description }}</p>
+    <p class="is-size-7 has-text-grey"><code>{{ key.id }}</code></p>
+  </td>
+  <td class="is-vcentered">
+    {% if key.permissions.is_empty() %}
+      <span class="has-text-grey is-size-7">None</span>
+    {% else %}
+      <span class="tag is-light">
+          {% for perm in key.permissions %}{{ perm.resource_type }}:{{ perm.action }}{% if !loop.last %}, {% endif %}{% endfor %}
+      </span>
+    {% endif %}
+  </td>
+  <td class="is-vcentered has-text-right">
+    <div class="buttons is-right">
+      <button class="button is-small is-danger is-outlined"
+              hx-delete="/g/{{ group.id }}/machine-keys/{{ key.id }}"
+              hx-target="#key-row-{{ key.id }}"
+              hx-swap="outerHTML"
+              hx-confirm="Delete this key?">
+        Delete
+      </button>
+    </div>
+  </td>
+</tr>

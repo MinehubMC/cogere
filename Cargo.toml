@@ -32,6 +32,7 @@ sha2 = "0.10.9"
 url = "2.5.8"
 chrono = { version = "0.4", features = ["serde"] }
 zip = "8.2.0"
+rand = "0.10.0"
 
 [build-dependencies]
 ureq = { version = "3", features = [] }

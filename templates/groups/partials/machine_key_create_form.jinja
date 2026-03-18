@@ -1,0 +1,18 @@
+<form id="create-key-form"
+      hx-post="/g/{{ group.id }}/machine-keys"
+      hx-target="#keys-tbody"
+      hx-swap="afterbegin"
+      hx-on::after-request="this.reset()">
+  <div class="field has-addons">
+    <div class="control is-expanded">
+      <input class="input"
+             type="text"
+             name="description"
+             placeholder="Key description, e.g. CI deploy key"
+             required />
+    </div>
+    <div class="control">
+      <button type="submit" class="button is-primary">Create Key</button>
+    </div>
+  </div>
+</form>

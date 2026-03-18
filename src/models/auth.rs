@@ -2,7 +2,7 @@ use axum_login::AuthUser;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::auth::permissions::InstanceRole;
+use crate::auth::permissions::{Action, InstanceRole, ResourceType};
 
 #[derive(Clone, Deserialize)]
 pub struct UserCredentials {
@@ -114,6 +114,64 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for MachineKey {
             group_id,
             description: row.try_get("description")?,
             key_hash: row.try_get("key_hash")?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, sqlx::FromRow, Serialize, Deserialize)]
+pub struct PublicMachineKey {
+    #[sqlx(try_from = "String")]
+    pub id: Uuid,
+    #[sqlx(try_from = "String")]
+    pub group_id: Uuid,
+    pub description: String,
+}
+
+impl From<MachineKey> for PublicMachineKey {
+    fn from(value: MachineKey) -> Self {
+        Self {
+            id: value.id,
+            group_id: value.group_id,
+            description: value.description,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MachineKeyPermission {
+    pub key_id: Uuid,
+    pub resource_type: ResourceType,
+    pub resource_id: Option<Uuid>,
+    pub action: Action,
+}
+
+impl<'r> sqlx::FromRow<'r, sqlx::sqlite::SqliteRow> for MachineKeyPermission {
+    fn from_row(row: &'r sqlx::sqlite::SqliteRow) -> Result<Self, sqlx::Error> {
+        use sqlx::Row;
+
+        let key_id = row
+            .try_get::<String, _>("key_id")?
+            .parse::<Uuid>()
+            .map_err(|e| sqlx::Error::ColumnDecode {
+                index: "key_id".into(),
+                source: Box::new(e),
+            })?;
+
+        let resource_id = row
+            .try_get::<Option<String>, _>("resource_id")?
+            .map(|s| {
+                s.parse::<Uuid>().map_err(|e| sqlx::Error::ColumnDecode {
+                    index: "resource_id".into(),
+                    source: Box::new(e),
+                })
+            })
+            .transpose()?;
+
+        Ok(MachineKeyPermission {
+            key_id,
+            resource_id,
+            resource_type: row.try_get("resource_type")?,
+            action: row.try_get("action")?,
         })
     }
 }

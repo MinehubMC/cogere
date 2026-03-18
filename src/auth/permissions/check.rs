@@ -70,16 +70,13 @@ impl<'a> PermissionChecker<'a> {
             }
         }
 
-        let resource_type = check.resource_type.as_str();
-        let action = check.action.as_str();
-
         if let Some(resource_id) = check.resource_id {
             if machine_key_has_specific_permission(
                 self.db,
                 key_id,
-                resource_type,
+                check.resource_type.clone(),
                 resource_id,
-                action,
+                check.action.clone(),
             )
             .await?
             {
@@ -87,7 +84,13 @@ impl<'a> PermissionChecker<'a> {
             }
         }
 
-        Ok(machine_key_has_wide_permission(self.db, key_id, resource_type, action).await?)
+        Ok(machine_key_has_wide_permission(
+            self.db,
+            key_id,
+            check.resource_type.clone(),
+            check.action.clone(),
+        )
+        .await?)
     }
 
     fn group_role_allows(

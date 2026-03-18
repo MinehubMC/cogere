@@ -1,7 +1,7 @@
 use crate::{
     auth::permissions::GroupRole,
     models::{
-        groups::{Group, GroupMachineKey, GroupMember},
+        groups::{Group, GroupMember},
         plugins::{GroupPluginSummary, PluginSource, Visibility},
     },
 };
@@ -169,14 +169,4 @@ pub async fn get_group_plugins(
             })
         })
         .collect()
-}
-
-pub async fn get_group_machine_keys(
-    pool: &SqlitePool,
-    group_id: Uuid,
-) -> Result<Vec<GroupMachineKey>, sqlx::Error> {
-    sqlx::query_as::<_, GroupMachineKey>("SELECT * FROM machine_keys WHERE group_id = ?")
-        .bind(group_id.to_string())
-        .fetch_all(pool)
-        .await
 }

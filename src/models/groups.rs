@@ -1,6 +1,6 @@
 use uuid::Uuid;
 
-use crate::auth::permissions::GroupRole;
+use crate::{auth::permissions::GroupRole, models::auth::MachineKeyPermission};
 
 #[derive(Debug)]
 pub struct Group {
@@ -71,6 +71,7 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for GroupMember {
 pub struct GroupMachineKey {
     pub id: Uuid,
     pub description: String,
+    pub permissions: Vec<MachineKeyPermission>,
 }
 
 impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for GroupMachineKey {
@@ -86,6 +87,7 @@ impl sqlx::FromRow<'_, sqlx::sqlite::SqliteRow> for GroupMachineKey {
         Ok(GroupMachineKey {
             id,
             description: row.try_get("description")?,
+            permissions: vec![],
         })
     }
 }

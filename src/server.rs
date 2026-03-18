@@ -18,7 +18,7 @@ use axum::{
     extract::DefaultBodyLimit,
     http::StatusCode,
     middleware,
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use axum_login::tower_sessions::ExpiredDeletion;
 use axum_login::{
@@ -156,7 +156,16 @@ impl Server {
             .route("/g/{group_id}", get(groups::groups_detail))
             .route(
                 "/g/{group_id}/machine-keys",
-                get(groups::group_machine_keys),
+                get(groups::group_machine_keys).post(groups::create_group_machine_key),
+            )
+            .route(
+                "/g/{group_id}/machine-keys/{key_id}",
+                delete(groups::delete_group_machine_key),
+            )
+            .route(
+                "/g/{group_id}/machine-keys/{key_id}/permissions",
+                post(groups::add_group_machine_key_permission)
+                    .delete(groups::remove_group_machine_key_permission),
             )
             .route("/g/{group_id}/members", get(groups::groups_members))
             .route("/g/{group_id}/plugins", get(groups::groups_plugins))

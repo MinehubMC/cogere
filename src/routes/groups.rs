@@ -24,7 +24,7 @@ use crate::{
     errors::{AppError, Error},
     models::{
         self,
-        auth::{PublicUser, User},
+        auth::{MachineKeyPermission, PublicMachineKey, PublicUser, User},
         groups::{GroupMachineKey, GroupMember},
         plugins::GroupPluginSummary,
         settings::InstanceSettings,
@@ -365,7 +365,11 @@ pub async fn group_machine_keys(
     )
     .await?;
 
-    let keys = database::groups::get_group_machine_keys(&state.db, group_id).await?;
+    let mut tx = state.db.begin().await?;
+
+    let keys = database::machine_keys::get_group_machine_keys(&mut *tx, group_id).await?;
+
+    tx.commit().await?;
 
     let html = if headers.contains_key("hx-request") {
         GroupMachineKeysPartialTemplate {
@@ -387,6 +391,182 @@ pub async fn group_machine_keys(
         }
         .render()?
     };
+
+    Ok(Html(html))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateMachineKeyForm {
+    pub description: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddPermissionForm {
+    pub resource_type: ResourceType,
+    pub action: Action,
+    pub resource_id: Option<Uuid>,
+}
+
+#[derive(Template)]
+#[template(path = "groups/partials/machine_key_created.jinja")]
+struct NewMachineKeyCreatedTemplate {
+    group: GroupEntry,
+    key: PublicMachineKey,
+    secret: String,
+    key_id: Uuid,
+    permissions: Vec<MachineKeyPermission>,
+    keys: Vec<GroupMachineKey>,
+}
+
+#[derive(Template)]
+#[template(path = "groups/partials/machine_key_permissions.jinja")]
+struct PermissionsListTemplate {
+    group: GroupEntry,
+    key_id: Uuid,
+    permissions: Vec<MachineKeyPermission>,
+}
+
+pub async fn create_group_machine_key(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    Path(group_id): Path<Uuid>,
+    Form(form): Form<CreateMachineKeyForm>,
+) -> Result<Html<String>, AppError> {
+    let (group, _user) = load_group_context(
+        &state,
+        &auth,
+        group_id,
+        Some(PermissionCheck::new(
+            ResourceType::MachineKey,
+            Action::Create,
+        )),
+    )
+    .await?;
+
+    let mut tx = state.db.begin().await?;
+    let created =
+        database::machine_keys::create_machine_key(&mut *tx, group_id, &form.description).await?;
+    tx.commit().await?;
+
+    let mut conn = state.db.acquire().await?;
+    let keys = database::machine_keys::get_group_machine_keys(&mut *conn, group_id).await?;
+
+    let html = NewMachineKeyCreatedTemplate {
+        group,
+        key_id: created.key.id,
+        key: created.key,
+        secret: created.secret,
+        permissions: vec![],
+        keys,
+    }
+    .render()?;
+
+    Ok(Html(html))
+}
+
+pub async fn add_group_machine_key_permission(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    Path((group_id, key_id)): Path<(Uuid, Uuid)>,
+    Form(form): Form<AddPermissionForm>,
+) -> Result<Html<String>, AppError> {
+    let (group, _user) = load_group_context(
+        &state,
+        &auth,
+        group_id,
+        Some(PermissionCheck::new(
+            ResourceType::MachineKey,
+            Action::Manage,
+        )),
+    )
+    .await?;
+
+    let mut tx = state.db.begin().await?;
+
+    database::machine_keys::add_machine_key_permission(
+        &mut *tx,
+        key_id,
+        form.resource_type,
+        form.resource_id,
+        form.action,
+    )
+    .await?;
+
+    let permissions = database::machine_keys::get_machine_key_permissions(&mut *tx, key_id).await?;
+
+    tx.commit().await?;
+
+    let html = PermissionsListTemplate {
+        group,
+        key_id,
+        permissions,
+    }
+    .render()?;
+
+    Ok(Html(html))
+}
+
+pub async fn delete_group_machine_key(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    Path((group_id, key_id)): Path<(Uuid, Uuid)>,
+) -> Result<Html<String>, AppError> {
+    load_group_context(
+        &state,
+        &auth,
+        group_id,
+        Some(PermissionCheck::new(
+            ResourceType::MachineKey,
+            Action::Delete,
+        )),
+    )
+    .await?;
+
+    let mut tx = state.db.begin().await?;
+    database::machine_keys::delete_machine_key(&mut *tx, key_id).await?;
+    tx.commit().await?;
+
+    Ok(Html(String::new()))
+}
+
+pub async fn remove_group_machine_key_permission(
+    State(state): State<AppState>,
+    auth: AuthSession,
+    Path((group_id, key_id)): Path<(Uuid, Uuid)>,
+    Form(form): Form<AddPermissionForm>,
+) -> Result<Html<String>, AppError> {
+    let (group, _user) = load_group_context(
+        &state,
+        &auth,
+        group_id,
+        Some(PermissionCheck::new(
+            ResourceType::MachineKey,
+            Action::Manage,
+        )),
+    )
+    .await?;
+
+    let mut tx = state.db.begin().await?;
+
+    database::machine_keys::remove_machine_key_permission(
+        &mut *tx,
+        key_id,
+        form.resource_type,
+        form.resource_id,
+        form.action,
+    )
+    .await?;
+
+    let permissions = database::machine_keys::get_machine_key_permissions(&mut *tx, key_id).await?;
+
+    tx.commit().await?;
+
+    let html = PermissionsListTemplate {
+        group,
+        key_id,
+        permissions,
+    }
+    .render()?;
 
     Ok(Html(html))
 }

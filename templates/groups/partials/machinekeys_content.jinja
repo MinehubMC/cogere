@@ -4,15 +4,25 @@
 </ul>
 {% endif %}
 
-<table class="table">
-    <thead>
-        <th>id</th>
-        <th>description</th>
-        <th>permissions</th>
-    </thead>
-    {% for key in keys %}
-        <td>{{ key.id }}</td>
-        <td>{{ key.description }}</td>
-        <td>TODO</td>
-    {% endfor %}
-</table>
+<div id="machinekeys-content">
+    <div id="secret-banner"></div>
+
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th style="width:12rem">Permissions</th>
+                <th style="width:8rem"></th>
+            </tr>
+        </thead>
+        <tbody id="keys-tbody">
+        {% for key in keys %}
+            {% include "groups/partials/machine_key_row.jinja" %}
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    {% include "groups/partials/machine_key_create_form.jinja" %}
+</div>

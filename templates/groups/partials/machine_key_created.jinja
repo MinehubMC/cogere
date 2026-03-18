@@ -1,0 +1,49 @@
+<tr id="key-row-{{ key.id }}">
+  <td class="is-vcentered">
+    <p class="has-text-weight-medium">{{ key.description }}</p>
+    <p class="is-size-7 has-text-grey"><code>{{ key.id }}</code></p>
+  </td>
+  <td class="is-vcentered">
+    <span class="has-text-grey is-size-7">None</span>
+  </td>
+  <td class="is-vcentered has-text-right">
+    <div class="buttons is-right">
+      <button class="button is-small is-danger is-outlined"
+              hx-delete="/g/{{ group.id }}/machine-keys/{{ key.id }}"
+              hx-target="#key-row-{{ key.id }}"
+              hx-swap="outerHTML"
+              hx-confirm="Delete this key?">
+        Delete
+      </button>
+    </div>
+  </td>
+</tr>
+
+<div id="secret-banner" hx-swap-oob="outerHTML:#secret-banner">
+  <article class="message is-warning mb-4">
+    <div class="message-header">
+      <p>Secret for <strong>{{ key.description }}</strong></p>
+      <button class="delete"
+              onclick="document.getElementById('secret-banner').remove()">
+      </button>
+    </div>
+    <div class="message-body">
+      <p class="is-size-7 mb-2">This secret will <strong>not</strong> be shown again.</p>
+      <div class="field has-addons">
+        <div class="control is-expanded">
+          <input id="secret-value"
+                 class="input is-family-monospace is-small"
+                 type="text"
+                 value="{{ secret }}"
+                 readonly />
+        </div>
+        <div class="control">
+          <button class="button is-info is-small"
+                  onclick="navigator.clipboard.writeText(document.getElementById('secret-value').value); this.textContent='Copied!'">
+            Copy
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+</div>
