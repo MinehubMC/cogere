@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM machine_key_permissions\n         WHERE key_id = ?\n           AND resource_type = ?\n           AND resource_id IS ?\n           AND action = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "090cf59adc3b39e0bfba52f6f15037ce544030ef7e8712e89b8af3d2a6670298"
+}

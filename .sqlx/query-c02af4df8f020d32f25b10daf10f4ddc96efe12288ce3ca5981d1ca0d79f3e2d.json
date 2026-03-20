@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO machine_keys (id, group_id, description, key_hash)\n         VALUES (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "c02af4df8f020d32f25b10daf10f4ddc96efe12288ce3ca5981d1ca0d79f3e2d"
+}

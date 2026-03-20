@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT OR IGNORE INTO machine_key_permissions (key_id, resource_type, resource_id, action) VALUES (?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "c211df27544275ea7eab7ba1502b82279611e02466e6341704b0387e4d2cabc9"
+}

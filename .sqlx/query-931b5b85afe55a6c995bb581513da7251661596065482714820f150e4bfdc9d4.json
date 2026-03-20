@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM assembly_artifacts WHERE assembly_id = ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "931b5b85afe55a6c995bb581513da7251661596065482714820f150e4bfdc9d4"
+}
