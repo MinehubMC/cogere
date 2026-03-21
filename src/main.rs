@@ -14,6 +14,9 @@ use tower_sessions::cookie::Key;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use url::Url;
 
+pub const VERSION: &str = env!("COGERE_VERSION");
+pub const GIT_SHA: &str = env!("COGERE_GIT_SHA");
+
 #[derive(Clone)]
 pub struct Config {
     pub data_folder: PathBuf,
@@ -84,6 +87,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
+
+    tracing::info!(
+        "Starting {} {} ({})",
+        env!("CARGO_CRATE_NAME"),
+        VERSION,
+        GIT_SHA
+    );
 
     let config = Config::from_env().unwrap_or_else(|e| {
         eprintln!("Configuration error: {e}");
