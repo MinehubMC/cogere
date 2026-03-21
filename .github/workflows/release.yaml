@@ -52,7 +52,7 @@ jobs:
           context: .
           file: ./Containerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}:${{ steps.tag.outputs.value }}
+          tags: ghcr.io/minehubmc/cogere:${{ steps.tag.outputs.value }}
           build-args: GIT_SHA=${{ steps.sha.outputs.value }}
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
-          cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
+          cache-from: type=registry,ref=ghcr.io/minehubmc/cogere:buildcache
+          cache-to: type=registry,ref=ghcr.io/minehubmc/cogere:buildcache,mode=max
