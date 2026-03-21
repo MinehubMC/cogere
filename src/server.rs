@@ -1,7 +1,7 @@
 use crate::{
     Config,
     assembler::{job::AssemblyJob, worker},
-    auth::{admin::require_admin, auth::Backend},
+    auth::auth::Backend,
     database::settings::load_instance_settings,
     errors::Error,
     models::settings::InstanceSettings,
@@ -27,8 +27,12 @@ use axum_login::{
     tower_sessions::SessionManagerLayer,
 };
 use axum_messages::MessagesManagerLayer;
+use governor::DefaultKeyedRateLimiter;
 use sqlx::SqlitePool;
-use std::sync::{Arc, atomic::AtomicUsize};
+use std::{
+    net::SocketAddr,
+    sync::{Arc, atomic::AtomicUsize},
+};
 use time::Duration;
 use tokio::{
     net::TcpListener,
@@ -37,6 +41,7 @@ use tokio::{
     task::AbortHandle,
 };
 use tower::{BoxError, ServiceBuilder};
+use tower_governor::{GovernorLayer, governor::GovernorConfigBuilder};
 use tower_http::{limit::RequestBodyLimitLayer, trace::TraceLayer};
 use tower_sessions::Expiry;
 use tower_sessions_sqlx_store::SqliteStore;
@@ -146,9 +151,59 @@ impl Server {
         let admin_routes = Router::new()
             .route("/admin/settings", get(admin::settings_index))
             .route("/admin/settings/reload", post(admin::settings_reload))
-            .route_layer(middleware::from_fn(require_admin));
+            .route_layer(middleware::from_fn(
+                crate::middleware::require_admin::require_admin,
+            ));
 
-        let authenticated_routes = Router::new()
+        let assemble_conf = Box::new(
+            GovernorConfigBuilder::default()
+                .key_extractor(crate::middleware::ratelimit::EntityKeyExtractor)
+                .per_second(30)
+                .burst_size(3)
+                .finish()
+                .unwrap(),
+        );
+        spawn_limiter_cleanup("assemble".to_string(), assemble_conf.limiter().clone());
+        let assemble_limiter = GovernorLayer::new(assemble_conf);
+
+        let assemble_routes = Router::new()
+            .route(
+                "/api/v1/groups/{group_id}/assemble",
+                post(assembler::request_assembly),
+            )
+            .route_layer(assemble_limiter);
+
+        let download_conf = Box::new(
+            GovernorConfigBuilder::default()
+                .key_extractor(crate::middleware::ratelimit::EntityKeyExtractor)
+                .per_second(2)
+                .burst_size(20)
+                .finish()
+                .unwrap(),
+        );
+        spawn_limiter_cleanup("download".to_string(), download_conf.limiter().clone());
+        let download_limiter = GovernorLayer::new(download_conf);
+
+        let download_routes = Router::new()
+            .route(
+                "/api/v1/groups/{group_id}/assemblies/{id}/download",
+                get(assembler::download_assembly),
+            )
+            .route_layer(download_limiter);
+
+        let general_conf = Box::new(
+            GovernorConfigBuilder::default()
+                .key_extractor(crate::middleware::ratelimit::EntityKeyExtractor)
+                .per_second(1)
+                .burst_size(10)
+                .finish()
+                .unwrap(),
+        );
+        spawn_limiter_cleanup("general".to_string(), general_conf.limiter().clone());
+        let general_limiter = GovernorLayer::new(general_conf);
+
+        let general_routes = Router::new()
+            .route("/", get(files::files_index))
             .route(
                 "/groups",
                 get(groups::groups_index).post(groups::create_group),
@@ -170,27 +225,24 @@ impl Server {
             .route("/g/{group_id}/members", get(groups::groups_members))
             .route("/g/{group_id}/plugins", get(groups::groups_plugins))
             .route(
-                "/api/v1/groups/{group_id}/assemble",
-                post(assembler::request_assembly),
-            )
-            .route(
                 "/api/v1/groups/{group_id}/assemblies/{id}",
                 get(assembler::get_assembly),
-            )
-            .route(
-                "/api/v1/groups/{group_id}/assemblies/{id}/download",
-                get(assembler::download_assembly),
             )
             .route(
                 "/api/v1/groups/{group_id}/plugins",
                 post(plugins::plugin_upload),
             )
+            .route_layer(general_limiter);
+
+        let authenticated_routes = Router::new()
+            .merge(assemble_routes)
+            .merge(download_routes)
+            .merge(general_routes)
             .merge(admin_routes)
             .route_layer(require_login);
 
         let app = Router::new()
             .merge(authenticated_routes)
-            .route("/", get(files::files_index))
             .route("/assets/{*path}", get(assets::serve_asset))
             .route("/login", get(login_page).post(login_post))
             .layer(MessagesManagerLayer)
@@ -208,23 +260,61 @@ impl Server {
                         }
                     }))
                     .timeout(std::time::Duration::from_secs(10))
-                    .layer(TraceLayer::new_for_http())
+                    .layer(
+                        TraceLayer::new_for_http()
+                            .make_span_with(move |request: &axum::http::Request<_>| {
+                                let ip_str = if self.config.log_ips {
+                                    request
+                                        .extensions()
+                                        .get::<crate::middleware::client_ip::ClientIp>()
+                                        .map(|ci| ci.0.to_string())
+                                        .unwrap_or_else(|| "unavailable".to_string())
+                                } else {
+                                    "-".to_string()
+                                };
+
+                                tracing::info_span!(
+                                    "request",
+                                    method = %request.method(),
+                                    uri = %request.uri().path(),
+                                    ip = %ip_str,
+                                )
+                            })
+                            .on_request(())
+                            .on_response(
+                                tower_http::trace::DefaultOnResponse::new()
+                                    .level(tracing::Level::INFO)
+                                    .latency_unit(tower_http::LatencyUnit::Millis),
+                            ),
+                    )
                     .into_inner(),
             )
             .layer(DefaultBodyLimit::disable())
             .layer(RequestBodyLimitLayer::new(
                 250 * 1024 * 1024, // 250Mb
             ))
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
+                crate::middleware::client_ip::resolve_client_ip,
+            ))
             .with_state(state);
 
         let listener = TcpListener::bind(self.config.socket_addr).await.unwrap();
         tracing::debug!("listening on {}", listener.local_addr().unwrap());
 
-        axum::serve(listener, app.into_make_service())
-            .with_graceful_shutdown(shutdown_signal(deletion_task.abort_handle()))
-            .await?;
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .with_graceful_shutdown(shutdown_signal(deletion_task.abort_handle()))
+        .await?;
 
-        deletion_task.await??;
+        match deletion_task.await {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => tracing::warn!("Session deletion task error: {e}"),
+            Err(e) if e.is_cancelled() => {} // normal shutdown
+            Err(e) => tracing::warn!("Session deletion task panicked: {e}"),
+        }
 
         Ok(())
     }
@@ -258,4 +348,17 @@ pub async fn reload_settings(state: &AppState) -> Result<(), Error> {
     let fresh = load_instance_settings(&state.db).await?;
     *state.settings.write().await = fresh;
     Ok(())
+}
+
+fn spawn_limiter_cleanup<K>(name: String, limiter: Arc<DefaultKeyedRateLimiter<K>>)
+where
+    K: std::hash::Hash + Eq + Clone + Send + Sync + 'static,
+{
+    std::thread::spawn(move || {
+        loop {
+            std::thread::sleep(std::time::Duration::from_secs(60));
+            tracing::info!("rate limiter '{}' storage size: {}", name, limiter.len());
+            limiter.retain_recent();
+        }
+    });
 }

@@ -23,6 +23,9 @@ COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/cogere /usr/lo
 ENV COGERE_SOCKET_ADDR="0.0.0.0:9005"
 ENV COGERE_DATA_FOLDER="/data"
 ENV COGERE_PUBLIC_BASE_URL="http://localhost:9005"
+ENV COGERE_TRUSTED_PROXY="none"
+ENV COGERE_LOG_IPS=false
+ENV RUST_LOG="cogere=info,tower_http=info"
 VOLUME ["/data"]
 EXPOSE 9005
 USER cogere

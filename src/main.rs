@@ -2,6 +2,7 @@ mod assembler;
 mod auth;
 mod database;
 mod errors;
+mod middleware;
 mod models;
 mod plugins;
 mod routes;
@@ -9,7 +10,10 @@ mod server;
 mod storage;
 
 use crate::server::Server;
-use std::{net::SocketAddr, path::PathBuf};
+use std::{
+    net::{IpAddr, SocketAddr},
+    path::PathBuf,
+};
 use tower_sessions::cookie::Key;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use url::Url;
@@ -23,6 +27,8 @@ pub struct Config {
     pub socket_addr: SocketAddr,
     pub cookie_key: Key,
     pub public_base_url: Url,
+    pub log_ips: bool,
+    pub trusted_proxy: Option<IpAddr>,
 }
 
 impl Config {
@@ -32,7 +38,7 @@ impl Config {
             .map_err(|_| "COGERE_DATA_FOLDER is not set".to_string())?;
 
         let socket_addr = std::env::var("COGERE_SOCKET_ADDR")
-            .unwrap_or_else(|_| "127.0.0.1:3000".to_string())
+            .unwrap_or_else(|_| "[::]:3000".to_string())
             .parse::<SocketAddr>()
             .map_err(|e| format!("COGERE_SOCKET_ADDR is not a valid socket address: {e}"))?;
 
@@ -58,11 +64,25 @@ impl Config {
                 Url::parse(&s).map_err(|e| format!("invalid COGERE_PUBLIC_BASE_URL: {e}"))
             })?;
 
+        let log_ips = std::env::var("COGERE_LOG_IPS")
+            .map(|v| v == "1" || v.to_lowercase() == "true")
+            .unwrap_or(false);
+
+        let trusted_proxy = match std::env::var("COGERE_TRUSTED_PROXY").as_deref() {
+            Ok("none") | Err(_) => None,
+            Ok(s) => Some(
+                s.parse::<IpAddr>()
+                    .map_err(|e| format!("invalid COGERE_TRUSTED_PROXY: {e}"))?,
+            ),
+        };
+
         Ok(Self {
             data_folder,
             socket_addr,
             cookie_key,
             public_base_url,
+            log_ips,
+            trusted_proxy,
         })
     }
 }
@@ -82,7 +102,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                format!("{}=debug,tower_http=debug", env!("CARGO_CRATE_NAME")).into()
+                format!("{}=info,tower_http=info", env!("CARGO_CRATE_NAME")).into()
             }),
         )
         .with(tracing_subscriber::fmt::layer())
