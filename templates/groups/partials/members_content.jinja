@@ -11,8 +11,10 @@
         <th>role</th>
     </thead>
     {% for user in members %}
+    <tr>
         <td>{{ user.id }}</td>
         <td>{{ user.username }}</td>
         <td>{{ user.role }}</td>
+    </tr>
     {% endfor %}
 </table>
