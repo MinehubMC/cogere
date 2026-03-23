@@ -202,7 +202,7 @@ impl Server {
         spawn_limiter_cleanup("general".to_string(), general_conf.limiter().clone());
         let general_limiter = GovernorLayer::new(general_conf);
 
-        let general_routes = Router::new()
+        let ui_routes = Router::new()
             .route("/", get(files::files_index))
             .route(
                 "/groups",
@@ -224,6 +224,11 @@ impl Server {
             )
             .route("/g/{group_id}/members", get(groups::groups_members))
             .route("/g/{group_id}/plugins", get(groups::groups_plugins))
+            .route_layer(general_limiter.clone())
+            .merge(admin_routes)
+            .route_layer(require_login);
+
+        let api_routes = Router::new()
             .route(
                 "/api/v1/groups/{group_id}/assemblies/{id}",
                 get(assembler::get_assembly),
@@ -232,17 +237,13 @@ impl Server {
                 "/api/v1/groups/{group_id}/plugins",
                 post(plugins::plugin_upload),
             )
-            .route_layer(general_limiter);
-
-        let authenticated_routes = Router::new()
+            .route_layer(general_limiter)
             .merge(assemble_routes)
-            .merge(download_routes)
-            .merge(general_routes)
-            .merge(admin_routes)
-            .route_layer(require_login);
+            .merge(download_routes);
 
         let app = Router::new()
-            .merge(authenticated_routes)
+            .merge(ui_routes)
+            .merge(api_routes)
             .route("/assets/{*path}", get(assets::serve_asset))
             .route("/login", get(login_page).post(login_post))
             .layer(MessagesManagerLayer)
