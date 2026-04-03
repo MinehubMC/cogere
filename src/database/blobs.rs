@@ -11,10 +11,16 @@ pub async fn find_by_sha256(
     pool: &SqlitePool,
     sha256: String,
 ) -> Result<Option<Blob>, sqlx::Error> {
-    sqlx::query_as::<_, Blob>("SELECT * FROM blobs WHERE sha256 = ?")
-        .bind(sha256)
-        .fetch_optional(pool)
-        .await
+    sqlx::query_as::<_, Blob>(
+        "SELECT b.*, COUNT(br.blob_id) AS ref_count
+             FROM blobs b
+             LEFT JOIN blob_refs br ON br.blob_id = b.id
+             WHERE b.sha256 = ?
+             GROUP BY b.id",
+    )
+    .bind(sha256)
+    .fetch_optional(pool)
+    .await
 }
 
 pub async fn create_blob(

@@ -46,7 +46,7 @@ pub async fn create_local_plugin(
         )
         .await?;
     } else {
-        blobs::add_blob_ref(&mut *tx, input.group_id, input.blob_id, entity).await?;
+        blobs::add_blob_ref(&mut *tx, input.blob_id, input.group_id, entity).await?;
     }
 
     sqlx::query!(
